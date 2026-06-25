@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Training Plan</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3/dist/chartjs-plugin-annotation.min.js"></script>
+<style>
+:root {
+  --bg: #f8fafc; --surface: #fff; --border: #e2e8f0; --text: #1e293b;
+  --muted: #64748b; --accent: #3b82f6;
+  --ctl-color: #38bdf8; --atl-color: #a78bfa; --form-color: #22c55e;
+  --zone-fresh: rgba(186,230,253,0.35); --zone-grey: rgba(226,232,240,0.5);
+  --zone-optimal: rgba(187,247,208,0.4); --zone-risk: rgba(254,202,202,0.4);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; }
+
+/* Header */
+header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 10px 20px; display: flex; align-items: center; gap: 24px; flex-shrink: 0; }
+.logo { font-weight: 700; font-size: 16px; color: var(--accent); white-space: nowrap; }
+.stats { display: flex; gap: 20px; flex: 1; }
+.stat { display: flex; flex-direction: column; align-items: center; min-width: 60px; }
+.stat-val { font-size: 18px; font-weight: 700; line-height: 1; }
+.stat-lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+.hdr-actions { display: flex; gap: 6px; flex-shrink: 0; }
+button { padding: 5px 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); cursor: pointer; font-size: 12px; color: var(--text); white-space: nowrap; }
+button:hover { background: var(--bg); }
+.btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn-primary:hover { background: #2563eb; }
+.btn-danger { color: #ef4444; border-color: #fca5a5; }
+.btn-danger:hover { background: #fef2f2; }
+
+/* Layout — 3-row split */
+.app { display: flex; flex-direction: column; flex: 1; overflow: hidden; padding: 12px; gap: 10px; }
+.table-bottom { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; }
+
+/* Chart cards */
+.chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px 10px; display: flex; flex-direction: column; flex: 0 0 26%; min-height: 0; }
+.chart-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; flex-shrink: 0; }
+.chart-title { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; }
+.legend { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.leg-item { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--muted); }
+.leg-line { width: 16px; height: 2px; border-radius: 1px; }
+.zl-dot { width: 8px; height: 8px; border-radius: 2px; }
+.chart-wrap { position: relative; flex: 1; min-height: 0; }
+
+/* Workout table */
+.table-header { display: flex; align-items: center; justify-content: space-between; padding: 0 16px 0 0; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.tabs { display: flex; }
+.tab-btn { padding: 10px 18px; font-size: 12px; font-weight: 600; border: none; border-bottom: 2px solid transparent; border-radius: 0; background: transparent; color: var(--muted); cursor: pointer; }
+.tab-btn:hover { background: var(--bg); color: var(--text); }
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); background: transparent; }
+.table-scroll { overflow-y: auto; flex: 1; }
+table.plan { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.plan thead th { position: sticky; top: 0; background: var(--bg); padding: 6px 12px; text-align: left; font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); white-space: nowrap; z-index: 1; }
+table.plan tbody tr.week-sep td { background: var(--bg); padding: 5px 12px 4px; font-size: 11px; font-weight: 700; color: var(--muted); border-top: 1px solid var(--border); }
+table.plan tbody tr.week-sep .w-tss { float: right; font-weight: 400; }
+table.plan tbody tr.day-row { cursor: pointer; border-bottom: 1px solid #f1f5f9; }
+table.plan tbody tr.day-row:hover td { background: #f8fafc; }
+table.plan tbody tr.day-row.is-today td { background: #eff6ff; }
+table.plan tbody tr.day-row.is-today td:first-child { border-left: 3px solid var(--accent); }
+table.plan tbody tr.day-row.is-past-empty { opacity: 0.4; }
+table.plan tbody td { padding: 6px 12px; vertical-align: middle; }
+.td-day { white-space: nowrap; }
+.td-dayname { font-weight: 600; font-size: 12px; }
+.td-datestr { font-size: 11px; color: var(--muted); margin-left: 4px; }
+.type-pill { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 10px; font-weight: 600; }
+.type-pill.completed { background: #dbeafe; color: #1d4ed8; }
+.type-pill.planned   { background: #f1f5f9; color: #475569; }
+.type-pill.rest      { background: #f0fdf4; color: #15803d; }
+.td-tss { font-weight: 700; text-align: right; }
+.td-tss.completed { color: var(--ctl-color); }
+.td-tss.planned   { color: var(--muted); }
+.td-dur { color: var(--muted); text-align: right; white-space: nowrap; }
+.td-name { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.td-notes { color: var(--muted); font-size: 12px; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.empty-hint { color: #cbd5e1; font-size: 12px; padding-left: 12px; }
+.td-ctl { font-size: 11px; color: var(--ctl-color); text-align: right; }
+.td-tsb { font-size: 11px; text-align: right; }
+
+/* Modal */
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 200; display: flex; align-items: center; justify-content: center; }
+.overlay.hidden { display: none; }
+.modal { background: var(--surface); border-radius: 12px; padding: 22px; width: 460px; max-width: 95vw; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
+.modal h2 { font-size: 15px; margin-bottom: 18px; }
+.fg { margin-bottom: 12px; }
+label { display: block; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+input, select, textarea { width: 100%; padding: 7px 9px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; color: var(--text); font-family: inherit; }
+textarea { resize: vertical; min-height: 55px; }
+.frow { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.modal-foot { display: flex; justify-content: space-between; margin-top: 18px; }
+.modal-foot .right { display: flex; gap: 7px; }
+
+/* Zone calculator */
+.zcalc { border: 1px solid var(--border); border-radius: 8px; padding: 10px; margin-top: 4px; }
+.zcalc-hdr { display: flex; justify-content: space-between; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; user-select: none; }
+.zone-row { display: grid; grid-template-columns: 120px 1fr 56px; align-items: center; gap: 8px; margin-top: 8px; }
+.zbadge { font-size: 10px; padding: 2px 6px; border-radius: 4px; color: #fff; text-align: center; white-space: nowrap; }
+.z1c{background:#94a3b8}.z2c{background:#38bdf8}.z3c{background:#34d399}.z4c{background:#fbbf24}.z5c{background:#f97316}.z6c{background:#ef4444}.z7c{background:#dc2626}
+.ztss { font-size: 12px; font-weight: 700; color: var(--accent); text-align: right; margin-top: 6px; }
+
+/* Settings */
+.sxn { margin-bottom: 18px; }
+.sxn h3 { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); padding-bottom: 5px; margin-bottom: 10px; }
+.csv-area { width: 100%; font-family: monospace; font-size: 11px; min-height: 80px; }
+
+input[type=file] { display: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🚴 Training Plan</div>
+  <div class="stats">
+    <div class="stat"><div class="stat-val" id="s-ctl" style="color:var(--ctl-color)">—</div><div class="stat-lbl">Fitness</div></div>
+    <div class="stat"><div class="stat-val" id="s-atl" style="color:var(--atl-color)">—</div><div class="stat-lbl">Fatigue</div></div>
+    <div class="stat"><div class="stat-val" id="s-tsb">—</div><div class="stat-lbl">Form</div></div>
+    <div class="stat"><div class="stat-val" id="s-7d" style="color:var(--muted)">—</div><div class="stat-lbl">7-Day TSS</div></div>
+    <div class="stat"><div class="stat-val" id="s-range" style="color:var(--muted); font-size:11px;">—</div><div class="stat-lbl">Chart Range</div></div>
+  </div>
+  <div class="hdr-actions">
+    <button id="syncStravaBtn" onclick="syncStrava(this)">↻ Sync Strava</button>
+    <button onclick="exportJSON()">Export JSON</button>
+    <button onclick="document.getElementById('importFile').click()">Import JSON</button>
+    <input type="file" id="importFile" accept=".json" onchange="importJSON(event)">
+    <button onclick="openSettings()">⚙ Settings</button>
+    <button class="btn-primary" onclick="openWorkoutModal(todayStr())">+ Add Workout</button>
+  </div>
+</header>
+
+<div class="app">
+  <!-- Fitness / Fatigue chart — full width -->
+  <div class="chart-card">
+    <div class="chart-header">
+      <div class="chart-title">Fitness &amp; Fatigue</div>
+      <div class="legend">
+        <div class="leg-item"><div class="leg-line" style="background:var(--ctl-color)"></div>Fitness (CTL)</div>
+        <div class="leg-item"><div class="leg-line" style="background:var(--atl-color)"></div>Fatigue (ATL)</div>
+        <div class="leg-item"><div class="leg-line" style="background:rgba(148,163,184,0.5)"></div>TSS</div>
+      </div>
+    </div>
+    <div class="chart-wrap"><canvas id="chartFitness"></canvas></div>
+  </div>
+
+  <!-- Form chart — full width -->
+  <div class="chart-card">
+    <div class="chart-header">
+      <div class="chart-title">Form (TSB)</div>
+      <div class="legend">
+        <div class="leg-item"><div class="zl-dot" style="background:var(--zone-fresh);border:1px solid #bae6fd;"></div>Fresh (&gt;5)</div>
+        <div class="leg-item"><div class="zl-dot" style="background:var(--zone-grey);border:1px solid #cbd5e1;"></div>Grey Zone</div>
+        <div class="leg-item"><div class="zl-dot" style="background:var(--zone-optimal);border:1px solid #86efac;"></div>Optimal</div>
+        <div class="leg-item"><div class="zl-dot" style="background:var(--zone-risk);border:1px solid #fca5a5;"></div>High Risk</div>
+      </div>
+    </div>
+    <div class="chart-wrap"><canvas id="chartForm"></canvas></div>
+  </div>
+
+  <!-- Bottom: workout table -->
+  <div class="table-bottom">
+    <div class="table-header">
+      <div class="tabs">
+        <button class="tab-btn" id="tab-past" onclick="switchTab('past')">Past</button>
+        <button class="tab-btn active" id="tab-future" onclick="switchTab('future')">Upcoming</button>
+      </div>
+      <div id="tab-controls"></div>
+    </div>
+    <div class="table-scroll">
+      <table class="plan">
+        <thead>
+          <tr>
+            <th style="width:100px">Day</th>
+            <th style="width:90px">Type</th>
+            <th>Workout</th>
+            <th style="width:60px;text-align:right">TSS</th>
+            <th style="width:70px;text-align:right">Duration</th>
+            <th style="width:60px;text-align:right" id="hdrCTL">ΔCTL</th>
+            <th style="width:60px;text-align:right" id="hdrForm">ΔForm</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody id="planTbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Workout Modal -->
+<div class="overlay hidden" id="wModal">
+  <div class="modal">
+    <h2 id="wModalTitle">Add Workout</h2>
+    <div class="fg"><label>Date</label><input type="date" id="wDate"></div>
+    <div class="fg"><label>Name / Description</label><input type="text" id="wName" placeholder="Endurance ride, Intervals…"></div>
+    <div class="frow">
+      <div class="fg"><label>TSS</label><input type="number" id="wTss" min="0" max="600" placeholder="0"></div>
+      <div class="fg"><label>Duration (min)</label><input type="number" id="wDuration" min="0" placeholder="0"></div>
+    </div>
+    <!-- Zone TSS Calculator -->
+    <div class="zcalc">
+      <div class="zcalc-hdr" onclick="toggleZones()">
+        <span>Zone TSS Calculator</span><span id="zToggle">▶ expand</span>
+      </div>
+      <div id="zBody" style="display:none">
+        <div id="zRows"></div>
+        <div class="ztss">Estimated TSS: <span id="zEst">0</span> <button style="margin-left:8px;font-size:11px;padding:3px 8px;" onclick="applyZoneTss()">Apply →</button></div>
+      </div>
+    </div>
+    <div class="fg" style="margin-top:10px;"><label>Notes</label><textarea id="wNotes" placeholder="Workout notes…"></textarea></div>
+    <div class="modal-foot">
+      <button class="btn-danger" id="wDeleteBtn" onclick="deleteWorkout()" style="display:none">Delete</button>
+      <div class="right">
+        <button onclick="closeWorkoutModal()">Cancel</button>
+        <button class="btn-primary" onclick="saveWorkout()">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="overlay hidden" id="sModal">
+  <div class="modal">
+    <h2>Settings</h2>
+    <div class="sxn">
+      <h3>Athlete</h3>
+      <div class="frow">
+        <div class="fg"><label>FTP (watts)</label><input type="number" id="sFtp" placeholder="250"></div>
+        <div class="fg"><label>LTHR (bpm)</label><input type="number" id="sLthr" placeholder="160"></div>
+      </div>
+    </div>
+    <div class="sxn">
+      <h3>Model</h3>
+      <div class="frow">
+        <div class="fg"><label>CTL Decay (days)</label><input type="number" id="sCtlD" placeholder="42"></div>
+        <div class="fg"><label>ATL Decay (days)</label><input type="number" id="sAtlD" placeholder="7"></div>
+      </div>
+      <div class="frow">
+        <div class="fg"><label>Starting CTL</label><input type="number" id="sCtl0" placeholder="0"></div>
+        <div class="fg"><label>Starting ATL</label><input type="number" id="sAtl0" placeholder="0"></div>
+      </div>
+      <div class="fg"><label>Model Start Date (leave blank to auto-detect)</label><input type="date" id="sStart"></div>
+    </div>
+    <div class="sxn">
+      <h3>Bulk Import (CSV)</h3>
+      <p style="font-size:11px;color:var(--muted);margin-bottom:6px;">Paste CSV to bulk-import <strong>planned</strong> workouts: <code>date,tss,name</code> &nbsp; date = YYYY-MM-DD</p>
+      <textarea class="csv-area" id="csvInput" placeholder="2026-04-01,80,Endurance ride&#10;2026-04-03,120,Threshold intervals&#10;2026-04-05,50,Recovery"></textarea>
+      <button style="margin-top:6px;width:100%;" onclick="importCSV()">Import CSV</button>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-danger" onclick="if(confirm('Clear all planned workouts? (Completed Strava history is not affected)')){persistImport({planned:{},settings:state.settings}).then(()=>{state.planned={};refresh();closeSettings();})}">Clear Planned Workouts</button>
+      <div class="right">
+        <button onclick="closeSettings()">Cancel</button>
+        <button class="btn-primary" onclick="saveSettings()">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── State & API ─────────────────────────────────────────────────────────────
+const API = 'http://localhost:5678/api';
+let state = {
+  settings: { ftp: 250, lthr: 160, ctlDecay: 42, atlDecay: 7, startCTL: 0, startATL: 0, startDate: '' },
+  planned: {},    // future targets: {date: {name,tss,duration_minutes,notes}}
+  completed: {}   // immutable Strava history: {date: {tss,duration_minutes,name,sport_type}}
+};
+
+function showBanner(msg, color) {
+  let b = document.getElementById('srv-banner');
+  if (!b) {
+    b = document.createElement('div');
+    b.id = 'srv-banner';
+    b.style.cssText = 'position:fixed;top:0;left:0;right:0;padding:10px 20px;font-size:13px;font-weight:600;z-index:999;text-align:center;';
+    document.body.prepend(b);
+  }
+  b.style.background = color || '#ef4444';
+  b.style.color = '#fff';
+  b.textContent = msg;
+  b.style.display = 'block';
+  if (color === '#22c55e') setTimeout(() => b.style.display = 'none', 2000);
+}
+
+async function apiFetch(path, opts = {}) {
+  const res = await fetch(API + path, {
+    headers: { 'Content-Type': 'application/json' },
+    ...opts
+  });
+  if (!res.ok) throw new Error(`API ${path} → ${res.status}`);
+  return res.json();
+}
+
+async function loadState() {
+  try {
+    state = await apiFetch('/data');
+    const b = document.getElementById('srv-banner');
+    if (b) b.style.display = 'none';
+  } catch {
+    showBanner('⚠ Server not running — start it with: python3 server.py  (then refresh)');
+  }
+}
+
+async function persistWorkout(date, workout) {
+  await apiFetch('/workout', { method: 'POST', body: JSON.stringify({ date, ...workout }) });
+}
+async function removeWorkout(date) {
+  await apiFetch(`/workout/${date}`, { method: 'DELETE' });
+}
+async function persistSettings(settings) {
+  await apiFetch('/settings', { method: 'POST', body: JSON.stringify(settings) });
+}
+async function persistImport(data) {
+  await apiFetch('/import', { method: 'POST', body: JSON.stringify(data) });
+}
+async function syncStrava(btn) {
+  const orig = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '↻ Syncing…';
+  try {
+    const res = await apiFetch('/sync-strava', { method: 'POST' });
+    if (res.ok) {
+      await loadState();
+      refresh();
+      showBanner(`✓ Synced ${res.days_synced} days (${res.activities_processed} activities) using FTP ${res.ftp_used}`, '#22c55e');
+    } else {
+      showBanner('Sync failed: ' + (res.error || 'unknown error'));
+    }
+  } catch(e) {
+    showBanner('Sync failed: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = orig;
+  }
+}
+
+// ─── Date Utils ─────────────────────────────────────────────────────────────
+function todayStr() { const n = new Date(); return fmtDate(n.getFullYear(), n.getMonth()+1, n.getDate()); }
+function fmtDate(y,m,d) { return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
+function parseDate(s) { const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); }
+function addDays(s, n) { const d=parseDate(s); d.setDate(d.getDate()+n); return fmtDate(d.getFullYear(),d.getMonth()+1,d.getDate()); }
+function daysBetween(a,b) { return Math.round((parseDate(b)-parseDate(a))/864e5); }
+function fmtShort(s) { return parseDate(s).toLocaleDateString('en-US',{month:'short',day:'numeric',weekday:'short'}); }
+
+// ─── PMC Calculation ─────────────────────────────────────────────────────────
+function computePMC() {
+  const { ctlDecay, atlDecay, startCTL, startATL, startDate } = state.settings;
+  const today = todayStr();
+  const futureEnd = addDays(today, 84);
+
+  // Find earliest completed activity to anchor model start
+  const completedDates = Object.keys(state.completed).sort();
+  const earliestCompleted = completedDates[0];
+
+  let modelStart;
+  if (startDate) modelStart = startDate;
+  else if (earliestCompleted) modelStart = addDays(earliestCompleted, -(ctlDecay * 2));
+  else modelStart = addDays(today, -180);
+
+  let ctl = startDate ? (startCTL || 0) : 0;
+  let atl = startDate ? (startATL || 0) : 0;
+
+  const results = [];
+  let cur = modelStart;
+
+  while (cur <= futureEnd) {
+    // Past/today: use completed TSS; future: use planned TSS
+    const comp = state.completed[cur];
+    const plan = state.planned[cur];
+    const tss = cur <= today
+      ? (comp ? (comp.tss || 0) : 0)
+      : (plan ? (plan.tss || 0) : 0);
+    ctl = ctl + (tss - ctl) / ctlDecay;
+    atl = atl + (tss - atl) / atlDecay;
+    results.push({
+      date: cur, tss,
+      ctl: Math.round(ctl * 10) / 10,
+      atl: Math.round(atl * 10) / 10,
+      tsb: Math.round((ctl - atl) * 10) / 10,
+      isFuture: cur > today,
+      isPlanned: cur > today && !!plan   // dashed line only for planned future
+    });
+    cur = addDays(cur, 1);
+  }
+  return results;
+}
+
+function getTodayStats() {
+  const pmc = computePMC();
+  const today = todayStr();
+  const t = pmc.find(d => d.date === today) || { ctl:0, atl:0, tsb:0 };
+  let tss7 = 0;
+  for (let i = -6; i <= 0; i++) {
+    const c = state.completed[addDays(today, i)];
+    if (c) tss7 += (c.tss || 0);
+  }
+  return { ...t, tss7 };
+}
+
+// ─── Charts ─────────────────────────────────────────────────────────────────
+let cFitness = null, cForm = null;
+
+function renderCharts() {
+  const pmc = computePMC();
+  const today = todayStr();
+
+  // Chart window follows the active tab
+  let chartStart, chartEnd;
+  if (activeTab === 'past' && pastNavMode === 'month' && pastNavYear !== null) {
+    // Show 6 weeks of lead-in + the full viewed month (clamped to today)
+    const firstOfMonth = fmtDate(pastNavYear, pastNavMonth + 1, 1);
+    const lastDay = new Date(pastNavYear, pastNavMonth + 1, 0).getDate();
+    const lastOfMonth = fmtDate(pastNavYear, pastNavMonth + 1, lastDay);
+    chartStart = addDays(firstOfMonth, -42);
+    chartEnd   = lastOfMonth < today ? lastOfMonth : today;
+  } else if (activeTab === 'past') {
+    // Rolling 4-week default: 6 weeks back so there's lead-in context
+    chartStart = addDays(today, -42);
+    chartEnd   = today;
+  } else {
+    // Upcoming tab: 3 months back + 12 weeks ahead
+    chartStart = addDays(today, -91);
+    chartEnd   = addDays(today, 84);
+  }
+
+  const vis = pmc.filter(d => d.date >= chartStart && d.date <= chartEnd);
+  const todayIdx = vis.findIndex(d => d.date === today);
+  const labels = vis.map(d => d.date);
+
+  // TSS bars: completed (past Strava) vs planned (future targets)
+  const tssComp = vis.map(d => (!d.isFuture && state.completed[d.date]?.tss > 0) ? state.completed[d.date].tss : null);
+  const tssPlan = vis.map(d => (d.isFuture && state.planned[d.date]?.tss > 0) ? state.planned[d.date].tss : null);
+
+  // Scale TSS y-axis so bars sit in bottom 25%
+  const maxTSS = Math.max(...vis.map(d => d.tss), 50) * 4;
+
+  const xAxisConfig = {
+    type: 'time',
+    time: { unit: 'week', displayFormats: { week: 'MMM d' } },
+    min: chartStart, max: chartEnd,
+    grid: { color: '#f1f5f9' },
+    ticks: { maxTicksLimit: 14, font: { size: 10 } }
+  };
+
+  const todayAnnotation = {
+    type: 'line', xMin: today, xMax: today,
+    borderColor: 'rgba(99,102,241,0.4)', borderWidth: 1.5,
+    borderDash: [4, 3]
+  };
+
+  // ── Fitness chart ──
+  const ctlData = vis.map(d => d.ctl);
+  const atlData = vis.map(d => d.atl);
+  const currentCTL = ctlData.find((_, i) => vis[i].date === today) || 0;
+
+  if (cFitness) cFitness.destroy();
+  cFitness = new Chart(document.getElementById('chartFitness').getContext('2d'), {
+    data: {
+      labels,
+      datasets: [
+        {
+          type: 'bar', label: 'TSS (completed)',
+          data: tssComp, yAxisID: 'yTSS',
+          backgroundColor: 'rgba(148,163,184,0.25)', borderWidth: 0, order: 10
+        },
+        {
+          type: 'bar', label: 'TSS (planned)',
+          data: tssPlan, yAxisID: 'yTSS',
+          backgroundColor: 'rgba(148,163,184,0.12)', borderWidth: 0, order: 10
+        },
+        {
+          type: 'line', label: 'Fitness (CTL)', data: ctlData,
+          borderColor: '#38bdf8', borderWidth: 2.5, pointRadius: 0, tension: 0.3,
+          yAxisID: 'yPMC', order: 1,
+          fill: { target: 'origin', above: 'rgba(56,189,248,0.06)', below: 'transparent' },
+          segment: { borderDash: ctx => ctx.p1DataIndex > todayIdx ? [6,3] : [] }
+        },
+        {
+          type: 'line', label: 'Fatigue (ATL)', data: atlData,
+          borderColor: '#a78bfa', borderWidth: 2.5, pointRadius: 0, tension: 0.3,
+          yAxisID: 'yPMC', order: 2,
+          segment: { borderDash: ctx => ctx.p1DataIndex > todayIdx ? [6,3] : [] }
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: ctx => {
+              const d = vis[ctx[0].dataIndex];
+              return d ? fmtShort(d.date) : '';
+            },
+            label: ctx => ctx.parsed.y != null ? `${ctx.dataset.label}: ${Math.round(ctx.parsed.y * 10)/10}` : null,
+            afterBody: ctx => {
+              const d = vis[ctx[0].dataIndex];
+              if (!d) return [];
+              const name = state.completed[d.date]?.name ||
+                           (d.isFuture ? state.planned[d.date]?.name : null);
+              return name ? [name] : [];
+            }
+          }
+        },
+        annotation: {
+          annotations: {
+            todayLine: todayAnnotation,
+            ctlLine: {
+              type: 'line', yMin: currentCTL, yMax: currentCTL,
+              borderColor: 'rgba(56,189,248,0.3)', borderWidth: 1, borderDash: [4,3]
+            }
+          }
+        }
+      },
+      scales: {
+        x: { ...xAxisConfig },
+        yPMC: {
+          type: 'linear', position: 'left',
+          grid: { color: '#f1f5f9' },
+          ticks: { font: { size: 10 } },
+          title: { display: true, text: 'Training load / day', font: { size: 10 }, color: '#64748b' }
+        },
+        yTSS: {
+          type: 'linear', position: 'right', max: maxTSS,
+          grid: { drawOnChartArea: false },
+          ticks: { display: false }
+        }
+      }
+    }
+  });
+
+  // ── Form chart ──
+  const tsbData = vis.map(d => d.tsb);
+  const allTSB = tsbData.filter(v => v !== null);
+  const tsbMin = Math.min(-35, ...allTSB) - 5;
+  const tsbMax = Math.max(15, ...allTSB) + 5;
+
+  if (cForm) cForm.destroy();
+  cForm = new Chart(document.getElementById('chartForm').getContext('2d'), {
+    data: {
+      labels,
+      datasets: [{
+        type: 'line', label: 'Form (TSB)', data: tsbData,
+        borderWidth: 2.5, pointRadius: 0, tension: 0.3,
+        yAxisID: 'yForm', order: 1,
+        fill: false,
+        segment: {
+          borderColor: ctx => {
+            const v = ctx.p1.parsed.y;
+            if (v > 5) return '#38bdf8';
+            if (v > -5) return '#94a3b8';
+            if (v > -30) return '#22c55e';
+            return '#ef4444';
+          },
+          borderDash: ctx => ctx.p1DataIndex > todayIdx ? [6,3] : []
+        }
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: ctx => {
+              const d = vis[ctx[0].dataIndex];
+              return d ? fmtShort(d.date) : '';
+            },
+            label: ctx => `Form (TSB): ${Math.round(ctx.parsed.y * 10) / 10}`,
+            afterBody: ctx => {
+              const d = vis[ctx[0].dataIndex];
+              if (!d) return [];
+              const name = state.completed[d.date]?.name ||
+                           (d.isFuture ? state.planned[d.date]?.name : null);
+              return name ? [name] : [];
+            }
+          }
+        },
+        annotation: {
+          annotations: {
+            todayLine: todayAnnotation,
+            zeroLine: {
+              type: 'line', yMin: 0, yMax: 0,
+              borderColor: 'rgba(100,116,139,0.3)', borderWidth: 1
+            },
+            freshZone: {
+              type: 'box', yMin: 5, yMax: tsbMax + 20,
+              backgroundColor: 'rgba(186,230,253,0.3)', borderWidth: 0,
+              drawTime: 'beforeDatasetsDraw'
+            },
+            greyZone: {
+              type: 'box', yMin: -5, yMax: 5,
+              backgroundColor: 'rgba(226,232,240,0.45)', borderWidth: 0,
+              drawTime: 'beforeDatasetsDraw'
+            },
+            optimalZone: {
+              type: 'box', yMin: -30, yMax: -5,
+              backgroundColor: 'rgba(187,247,208,0.35)', borderWidth: 0,
+              drawTime: 'beforeDatasetsDraw'
+            },
+            riskZone: {
+              type: 'box', yMin: tsbMin - 20, yMax: -30,
+              backgroundColor: 'rgba(254,202,202,0.35)', borderWidth: 0,
+              drawTime: 'beforeDatasetsDraw'
+            }
+          }
+        }
+      },
+      scales: {
+        x: { ...xAxisConfig },
+        yForm: {
+          type: 'linear', position: 'left',
+          min: tsbMin, max: tsbMax,
+          grid: { color: '#f1f5f9' },
+          ticks: { font: { size: 10 } },
+          title: { display: true, text: 'Form', font: { size: 10 }, color: '#64748b' }
+        }
+      }
+    }
+  });
+
+  // Chart range label
+  const weeks = Math.round(daysBetween(chartStart, chartEnd) / 7);
+  document.getElementById('s-range').textContent = `${weeks}w`;
+}
+
+function renderStats() {
+  const { ctl, atl, tsb, tss7 } = getTodayStats();
+  document.getElementById('s-ctl').textContent = Math.round(ctl);
+  document.getElementById('s-atl').textContent = Math.round(atl);
+  const tsbEl = document.getElementById('s-tsb');
+  tsbEl.textContent = (tsb >= 0 ? '+' : '') + Math.round(tsb);
+  if (tsb > 5) tsbEl.style.color = '#38bdf8';
+  else if (tsb > -5) tsbEl.style.color = '#94a3b8';
+  else if (tsb > -30) tsbEl.style.color = '#22c55e';
+  else tsbEl.style.color = '#ef4444';
+  document.getElementById('s-7d').textContent = Math.round(tss7);
+}
+
+// ─── Workout Table ────────────────────────────────────────────────────────────
+let activeTab = 'future';
+
+// Past tab navigator — two modes:
+//   'rolling' : last 4 weeks ending today (default)
+//   'month'   : a specific full calendar month
+let pastNavMode  = 'rolling';
+let pastNavYear  = null;   // only used in 'month' mode
+let pastNavMonth = null;   // 0-based, only used in 'month' mode
+
+function pastMonthLabel(y, m) {
+  return new Date(y, m, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+}
+
+function pastNavGoMonth(y, m) {
+  pastNavMode  = 'month';
+  pastNavYear  = y;
+  pastNavMonth = m;
+  renderPastNav();
+  renderCharts();
+  renderWorkoutTable();
+}
+
+function pastNavGoRolling() {
+  pastNavMode = 'rolling';
+  renderPastNav();
+  renderCharts();
+  renderWorkoutTable();
+}
+
+function pastNavStep(delta) {
+  pastNavMonth += delta;
+  if (pastNavMonth > 11) { pastNavMonth = 0;  pastNavYear++; }
+  if (pastNavMonth < 0)  { pastNavMonth = 11; pastNavYear--; }
+  renderPastNav();
+  renderCharts();
+  renderWorkoutTable();
+}
+
+function renderPastNav() {
+  const ctrl = document.getElementById('tab-controls');
+  if (!ctrl) return;
+  const now = new Date();
+  const prevY = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+  const prevM = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
+  const prevLabel = pastMonthLabel(prevY, prevM);
+
+  if (pastNavMode === 'rolling') {
+    ctrl.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:12px;color:var(--muted);">Last 4 weeks</span>
+        <button onclick="pastNavGoMonth(${prevY},${prevM})"
+          style="background:none;border:none;padding:0;cursor:pointer;font-size:12px;color:var(--accent);text-decoration:underline;">
+          ← ${prevLabel}
+        </button>
+      </div>`;
+  } else {
+    const label = pastMonthLabel(pastNavYear, pastNavMonth);
+    // Next month
+    let ny = pastNavYear, nm = pastNavMonth + 1;
+    if (nm > 11) { nm = 0; ny++; }
+    const nextIsRolling = (ny === now.getFullYear() && nm === now.getMonth());
+    const nextIsFuture  = (ny > now.getFullYear()) || (ny === now.getFullYear() && nm > now.getMonth());
+    ctrl.innerHTML = `
+      <div style="display:flex;align-items:center;gap:6px;">
+        <button onclick="pastNavStep(-1)"
+          style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:13px;">‹</button>
+        <span style="font-size:12px;color:var(--text);font-weight:500;min-width:110px;text-align:center;">${label}</span>
+        ${nextIsFuture
+          ? `<button disabled style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:13px;opacity:0.35;">›</button>`
+          : nextIsRolling
+            ? `<button onclick="pastNavGoRolling()"
+                style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:12px;">Today ›</button>`
+            : `<button onclick="pastNavStep(1)"
+                style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:13px;">›</button>`
+        }
+        <button onclick="pastNavGoRolling()"
+          style="background:none;border:none;padding:0 4px;cursor:pointer;font-size:12px;color:var(--accent);text-decoration:underline;">
+          Today
+        </button>
+      </div>`;
+  }
+}
+
+function switchTab(tab) {
+  activeTab = tab;
+  document.getElementById('tab-past').classList.toggle('active', tab === 'past');
+  document.getElementById('tab-future').classList.toggle('active', tab === 'future');
+
+  document.getElementById('hdrCTL').textContent  = 'ΔCTL';
+  document.getElementById('hdrForm').textContent = 'ΔForm';
+
+  const ctrl = document.getElementById('tab-controls');
+  if (tab === 'past') {
+    ctrl.innerHTML = ''; // renderPastNav fills it
+    renderPastNav();
+  } else {
+    ctrl.innerHTML = '';
+  }
+  renderCharts();
+  renderWorkoutTable();
+}
+
+function fmtDuration(m) {
+  if (!m) return '—';
+  const h = Math.floor(m/60), min = m%60;
+  return h > 0 ? `${h}h${min > 0 ? ` ${min}m` : ''}` : `${min}m`;
+}
+
+function tsbStyle(v) {
+  if (v == null) return '';
+  return v > 5 ? 'color:#38bdf8' : v > -5 ? 'color:#94a3b8' : v > -30 ? 'color:#22c55e' : 'color:#ef4444';
+}
+function tsbText(v) {
+  return v != null ? (v >= 0 ? '+' : '') + Math.round(v) : '—';
+}
+function deltaText(cur, prev) {
+  if (cur == null || prev == null) return '—';
+  const d = Math.round((cur - prev) * 10) / 10;
+  return (d >= 0 ? '+' : '') + d;
+}
+function deltaStyle(cur, prev) {
+  if (cur == null || prev == null) return '';
+  const d = cur - prev;
+  return d > 0.05 ? 'color:#22c55e' : d < -0.05 ? 'color:#f87171' : 'color:#94a3b8';
+}
+
+function buildWeekRows(tbody, weekStart, days, windowStart, windowEnd, pmcMap, today, isPastTab) {
+  const daysInWindow = days.filter(d => d >= windowStart && d <= windowEnd);
+  if (!daysInWindow.length) return;
+
+  // For upcoming tab, exclude days that already have a completed workout
+  const daysToShow = isPastTab
+    ? [...daysInWindow].reverse()           // past: most recent day first
+    : daysInWindow.filter(d => !state.completed[d] && d >= today); // upcoming: hide completed + hide past rest days
+  if (!daysToShow.length) return;
+
+  const weekEnd = days[6];
+  // Week TSS: completed for past tab, planned (non-completed days only) for upcoming tab
+  const weekTSS = daysInWindow.reduce((s,d) => {
+    if (isPastTab) return s + (state.completed[d]?.tss || 0);
+    if (state.completed[d]) return s; // already done — don't double-count in upcoming
+    return s + (state.planned[d]?.tss || 0);
+  }, 0);
+  const wLabel = parseDate(weekStart).toLocaleDateString('en-US',{month:'short',day:'numeric'}) +
+                 ' – ' + parseDate(weekEnd).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+
+  const sepRow = tbody.insertRow();
+  sepRow.className = 'week-sep';
+  sepRow.innerHTML = `<td colspan="8"><span>${wLabel}</span><span class="w-tss">TSS ${Math.round(weekTSS)}</span></td>`;
+
+  const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+  for (const d of daysToShow) {
+    const pDay = pmcMap[d];
+    const prevDay = pmcMap[addDays(d, -1)];
+    const isToday = d === today;
+    const dt = parseDate(d);
+    const dayName = DAY_NAMES[dt.getDay()];
+    const dateStr = dt.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    const tsbVal = pDay?.tsb ?? null;
+
+    if (isPastTab) {
+      // ── Past tab: completed workouts from Strava — read-only ──
+      const c = state.completed[d];
+      const tr = tbody.insertRow();
+      tr.className = `day-row${isToday?' is-today':''}`;
+      const dCtl = deltaText(pDay?.ctl, prevDay?.ctl);
+      const dCtlStyle = deltaStyle(pDay?.ctl, prevDay?.ctl);
+      const dTsb = deltaText(tsbVal, prevDay?.tsb ?? null);
+      const dTsbStyle = deltaStyle(tsbVal, prevDay?.tsb ?? null);
+      if (c) {
+        if (c.strava_id) {
+          tr.style.cursor = 'pointer';
+          tr.onclick = () => window.open(`https://www.strava.com/activities/${c.strava_id}`, '_blank');
+        }
+        tr.innerHTML = `
+          <td class="td-day"><span class="td-dayname">${dayName}</span><span class="td-datestr">${dateStr}</span></td>
+          <td><span class="type-pill completed">done</span></td>
+          <td class="td-name">${c.name || '—'}${c.strava_id ? ' <span style="color:var(--muted);font-size:10px;">↗</span>' : ''}</td>
+          <td class="td-tss completed" title="${c.tss_override != null ? `Strava computed: ${c.tss_computed} · click to edit` : 'Click to override TSS'}"
+              style="cursor:pointer;" onclick="event.stopPropagation(); editTssOverride('${d}', ${c.tss_computed}, ${c.tss_override ?? 'null'})"
+            >${c.tss_override != null ? `<span style="text-decoration:underline dotted;">${Math.round(c.tss_override)}</span>` : (Math.round(c.tss) || '<span style="color:var(--muted)">0 ✎</span>')}</td>
+          <td class="td-dur">${fmtDuration(c.duration_minutes)}</td>
+          <td class="td-ctl" style="${dCtlStyle}">${dCtl}</td>
+          <td class="td-tsb" style="${dTsbStyle}">${dTsb}</td>
+          <td class="td-notes" style="color:var(--muted);font-size:11px;">${c.sport_type||''}</td>`;
+      } else {
+        tr.innerHTML = `
+          <td class="td-day"><span class="td-dayname">${dayName}</span><span class="td-datestr">${dateStr}</span></td>
+          <td><span class="type-pill rest">rest</span></td>
+          <td class="td-name" style="color:var(--muted)">—</td>
+          <td></td><td></td>
+          <td class="td-ctl" style="${dCtlStyle}">${dCtl}</td>
+          <td class="td-tsb" style="${dTsbStyle}">${dTsb}</td>
+          <td></td>`;
+      }
+
+    } else {
+      // ── Upcoming tab: planned targets — editable ──
+      const w = state.planned[d];
+      const tr = tbody.insertRow();
+      tr.className = `day-row${isToday?' is-today':''}`;
+      tr.onclick = () => openWorkoutModal(d);
+      const dCtl = deltaText(pDay?.ctl, prevDay?.ctl);
+      const dCtlStyle = deltaStyle(pDay?.ctl, prevDay?.ctl);
+      const dTsb = deltaText(tsbVal, prevDay?.tsb ?? null);
+      const dTsbStyle = deltaStyle(tsbVal, prevDay?.tsb ?? null);
+      if (w) {
+        tr.innerHTML = `
+          <td class="td-day"><span class="td-dayname">${dayName}</span><span class="td-datestr">${dateStr}</span></td>
+          <td><span class="type-pill planned">plan</span></td>
+          <td class="td-name">${w.name || '—'}</td>
+          <td class="td-tss planned">${w.tss || '—'}</td>
+          <td class="td-dur">${fmtDuration(w.duration_minutes)}</td>
+          <td class="td-ctl" style="${dCtlStyle}">${dCtl}</td>
+          <td class="td-tsb" style="${dTsbStyle}">${dTsb}</td>
+          <td class="td-notes">${w.notes || ''}</td>`;
+      } else {
+        tr.innerHTML = `
+          <td class="td-day"><span class="td-dayname">${dayName}</span><span class="td-datestr">${dateStr}</span></td>
+          <td><span class="type-pill rest">rest</span></td>
+          <td class="td-name" style="color:var(--muted)">—</td>
+          <td></td><td></td>
+          <td class="td-ctl" style="${dCtlStyle}">${dCtl}</td>
+          <td class="td-tsb" style="${dTsbStyle}">${dTsb}</td>
+          <td></td>`;
+      }
+    }
+  }
+}
+
+function renderWorkoutTable() {
+  const today = todayStr();
+  const pmc = computePMC();
+  const pmcMap = Object.fromEntries(pmc.map(d => [d.date, d]));
+  const tbody = document.getElementById('planTbody');
+  tbody.innerHTML = '';
+
+  if (activeTab === 'future') {
+    // Today through 12 weeks ahead — show all days (empty = add hint)
+    const end = addDays(today, 84);
+    const sd = parseDate(today);
+    const offset = sd.getDay() === 0 ? -6 : 1 - sd.getDay();
+    let weekStart = addDays(today, offset);
+    while (weekStart <= end) {
+      const days = Array.from({length:7}, (_,i) => addDays(weekStart, i));
+      buildWeekRows(tbody, weekStart, days, today, end, pmcMap, today, false); // isPastTab=false
+      weekStart = addDays(weekStart, 7);
+    }
+    // Scroll to top
+    document.querySelector('.table-scroll').scrollTop = 0;
+
+  } else {
+    // Past tab
+    let windowStart, windowEnd;
+    if (pastNavMode === 'month' && pastNavYear !== null) {
+      // Full calendar month
+      windowStart = fmtDate(pastNavYear, pastNavMonth + 1, 1);
+      const lastDay = new Date(pastNavYear, pastNavMonth + 1, 0).getDate();
+      const monthEnd = fmtDate(pastNavYear, pastNavMonth + 1, lastDay);
+      windowEnd = monthEnd < today ? monthEnd : today;
+    } else {
+      // Rolling: last 4 weeks ending today
+      windowStart = addDays(today, -27); // 4 weeks = 28 days (today is day 28)
+      windowEnd   = today;
+    }
+
+    // Walk week-by-week covering the window, most recent first
+    const sd = parseDate(windowStart);
+    const offset = sd.getDay() === 0 ? -6 : 1 - sd.getDay();
+    let weekStart = addDays(windowStart, offset);
+    const weeks = [];
+    while (weekStart <= windowEnd) {
+      weeks.push(weekStart);
+      weekStart = addDays(weekStart, 7);
+    }
+    for (const ws of weeks.reverse()) {
+      const days = Array.from({length:7}, (_,i) => addDays(ws, i));
+      buildWeekRows(tbody, ws, days, windowStart, windowEnd, pmcMap, today, true);
+    }
+    document.querySelector('.table-scroll').scrollTop = 0;
+  }
+}
+
+// ─── Workout Modal ───────────────────────────────────────────────────────────
+let editDate = null;
+function openWorkoutModal(ds) {
+  editDate = ds;
+  const w = state.planned[ds];
+  document.getElementById('wModalTitle').textContent = w ? 'Edit Planned Workout' : 'Plan Workout';
+  document.getElementById('wDate').value = ds;
+  document.getElementById('wName').value = w?.name || '';
+  document.getElementById('wTss').value = w?.tss || '';
+  document.getElementById('wDuration').value = w?.duration_minutes || '';
+  document.getElementById('wNotes').value = w?.notes || '';
+  document.getElementById('wDeleteBtn').style.display = w ? 'block' : 'none';
+  resetZoneCalc();
+  document.getElementById('wModal').classList.remove('hidden');
+}
+function closeWorkoutModal() { document.getElementById('wModal').classList.add('hidden'); }
+
+async function saveWorkout() {
+  const date = document.getElementById('wDate').value;
+  if (!date) return;
+  const workout = {
+    name: document.getElementById('wName').value.trim(),
+    tss: parseFloat(document.getElementById('wTss').value) || 0,
+    duration_minutes: parseInt(document.getElementById('wDuration').value) || 0,
+    notes: document.getElementById('wNotes').value.trim()
+  };
+  if (date !== editDate && editDate) {
+    delete state.planned[editDate];
+    await removeWorkout(editDate);
+  }
+  state.planned[date] = workout;
+  await persistWorkout(date, workout);
+  closeWorkoutModal(); refresh();
+}
+async function deleteWorkout() {
+  if (editDate && state.planned[editDate]) {
+    delete state.planned[editDate];
+    await removeWorkout(editDate);
+    closeWorkoutModal(); refresh();
+  }
+}
+
+// ─── Zone Calculator ─────────────────────────────────────────────────────────
+const ZONES = [
+  { label: 'Z1 Recovery',   cls: 'z1c', if: 0.40 },
+  { label: 'Z2 Endurance',  cls: 'z2c', if: 0.65 },
+  { label: 'Z3 Tempo',      cls: 'z3c', if: 0.81 },
+  { label: 'Z4 Threshold',  cls: 'z4c', if: 0.93 },
+  { label: 'Z5 VO2max',     cls: 'z5c', if: 1.07 },
+  { label: 'Z6 Anaerobic',  cls: 'z6c', if: 1.25 },
+  { label: 'Z7 Neuro',      cls: 'z7c', if: 1.50 }
+];
+
+function resetZoneCalc() {
+  document.getElementById('zRows').innerHTML = ZONES.map((z,i) => `
+    <div class="zone-row">
+      <span class="zbadge ${z.cls}">${z.label}</span>
+      <input type="number" min="0" max="600" value="0" placeholder="min" oninput="calcZoneTss()" data-zi="${i}">
+      <span style="font-size:11px;color:var(--muted)">min</span>
+    </div>`).join('');
+  document.getElementById('zEst').textContent = '0';
+}
+function calcZoneTss() {
+  let tss = 0;
+  document.querySelectorAll('[data-zi]').forEach(el => {
+    const z = ZONES[+el.dataset.zi];
+    tss += (parseInt(el.value)||0) / 60 * z.if * z.if * 100;
+  });
+  document.getElementById('zEst').textContent = Math.round(tss);
+}
+function applyZoneTss() { document.getElementById('wTss').value = document.getElementById('zEst').textContent; }
+function toggleZones() {
+  const b = document.getElementById('zBody');
+  const open = b.style.display === 'none';
+  b.style.display = open ? 'block' : 'none';
+  document.getElementById('zToggle').textContent = open ? '▼ collapse' : '▶ expand';
+}
+
+// ─── Settings Modal ───────────────────────────────────────────────────────────
+function openSettings() {
+  const s = state.settings;
+  document.getElementById('sFtp').value = s.ftp||250;
+  document.getElementById('sLthr').value = s.lthr||160;
+  document.getElementById('sCtlD').value = s.ctlDecay||42;
+  document.getElementById('sAtlD').value = s.atlDecay||7;
+  document.getElementById('sCtl0').value = s.startCTL||0;
+  document.getElementById('sAtl0').value = s.startATL||0;
+  document.getElementById('sStart').value = s.startDate||'';
+  document.getElementById('csvInput').value = '';
+  document.getElementById('sModal').classList.remove('hidden');
+}
+function closeSettings() { document.getElementById('sModal').classList.add('hidden'); }
+async function saveSettings() {
+  state.settings = {
+    ftp: +document.getElementById('sFtp').value||250,
+    lthr: +document.getElementById('sLthr').value||160,
+    ctlDecay: +document.getElementById('sCtlD').value||42,
+    atlDecay: +document.getElementById('sAtlD').value||7,
+    startCTL: +document.getElementById('sCtl0').value||0,
+    startATL: +document.getElementById('sAtl0').value||0,
+    startDate: document.getElementById('sStart').value
+  };
+  await persistSettings(state.settings);
+  closeSettings(); refresh();
+}
+
+// ─── CSV Import ───────────────────────────────────────────────────────────────
+async function importCSV() {
+  const lines = document.getElementById('csvInput').value.trim().split('\n');
+  let imported = 0;
+  for (const line of lines) {
+    const parts = line.trim().split(',');
+    if (parts.length < 2) continue;
+    const [date, tss, ...nameParts] = parts;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date.trim())) continue;
+    const w = { name: nameParts.join(',').trim(), tss: parseFloat(tss)||0, duration_minutes: 0, notes: '' };
+    state.planned[date.trim()] = w;
+    await persistWorkout(date.trim(), w);
+    imported++;
+  }
+  alert(`Imported ${imported} planned workouts.`);
+  closeSettings(); refresh();
+}
+
+// ─── JSON Import / Export ─────────────────────────────────────────────────────
+function exportJSON() {
+  // Export only planned workouts + settings (completed comes from Strava sync)
+  const exportData = { planned: state.planned, settings: state.settings };
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = Object.assign(document.createElement('a'), { href:url, download:'training-plan.json' });
+  a.click(); URL.revokeObjectURL(url);
+}
+async function importJSON(e) {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = async ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      await persistImport(data);
+      state.planned = data.planned || {};
+      if (data.settings) state.settings = data.settings;
+      refresh();
+    } catch { alert('Invalid JSON'); }
+  };
+  r.readAsText(f); e.target.value = '';
+}
+
+// ─── TSS Override ────────────────────────────────────────────────────────────
+async function editTssOverride(date, computed, current) {
+  const computedStr = computed > 0 ? `Strava computed ${Math.round(computed)}` : 'Strava has no data (0)';
+  const currentStr  = current != null ? `Current override: ${Math.round(current)}` : computedStr;
+  const input = window.prompt(
+    `TSS override for ${fmtShort(date)}\n${currentStr}\n\nEnter estimated TSS (leave blank to remove override):`,
+    current != null ? Math.round(current) : (computed > 0 ? Math.round(computed) : '')
+  );
+  if (input === null) return; // cancelled
+  const tss = input.trim() === '' ? null : parseFloat(input);
+  if (tss !== null && (isNaN(tss) || tss < 0)) return alert('Please enter a valid TSS number.');
+  await apiFetch('/tss-override', { method: 'POST', body: JSON.stringify({ date, tss }) });
+  state = await apiFetch('/data');
+  refresh();
+}
+
+// ─── Main refresh ─────────────────────────────────────────────────────────────
+function refresh() { renderStats(); renderCharts(); renderWorkoutTable(); }
+
+// Close modals on overlay click
+['wModal','sModal'].forEach(id => {
+  document.getElementById(id).addEventListener('click', e => {
+    if (e.target.id === id) document.getElementById(id).classList.add('hidden');
+  });
+});
+
+// ─── Boot ──────────────────────────────────────────────────────────────────────
+(async () => {
+  await loadState();
+  renderStats();
+  renderCharts();
+  renderWorkoutTable();
+})();
+</script>
+</body>
+</html>

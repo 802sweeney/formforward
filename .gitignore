@@ -1,0 +1,36 @@
+# Database — contains personal Strava activity data
+training.db
+*.db-shm
+*.db-wal
+
+# Credentials and secrets
+.env
+*.env
+strava_token.json
+token_cache.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+venv/
+.venv/
+*.egg-info/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Excel / personal files
+*.xlsx
+*.xls
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
