@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Acute Recovery &amp; Fatigue Deficit Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+<style>
+:root {
+  --bg: #0b1120;
+  --surface: #1e293b;
+  --surface-hover: #334155;
+  --border: #334155;
+  --text: #f8fafc;
+  --muted: #94a3b8;
+  --accent: #38bdf8;
+  --green: #22c55e;
+  --yellow: #eab308;
+  --red: #ef4444;
+  --hole-red: rgba(239, 68, 68, 0.35);
+  --hole-yellow: rgba(234, 179, 8, 0.25);
+  --hole-green: rgba(34, 197, 94, 0.25);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.logo-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo {
+  font-size: 18px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #38bdf8, #ec4899);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  font-weight: 600;
+}
+
+.hdr-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+button {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+button:hover {
+  background: var(--surface-hover);
+  border-color: #475569;
+}
+
+.btn-primary {
+  background: #0284c7;
+  border-color: #0284c7;
+  color: #fff;
+}
+.btn-primary:hover {
+  background: #0369a1;
+}
+
+/* KPI Strip */
+.kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+  padding: 16px 24px 8px;
+}
+
+.kpi-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+.kpi-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.kpi-val {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.kpi-sub {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.status-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-top: 6px;
+  width: fit-content;
+}
+
+.status-green { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.4); }
+.status-yellow { background: rgba(234, 179, 8, 0.2); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.4); }
+.status-red { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
+
+/* Dashboard container */
+.container {
+  padding: 12px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 18px 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.panel-title {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.panel-legend {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 11px;
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+
+.leg-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.leg-color {
+  width: 12px;
+  height: 3px;
+  border-radius: 2px;
+}
+
+.chart-box {
+  position: relative;
+  width: 100%;
+}
+.chart-box-hole { height: 260px; }
+.chart-box-main { height: 210px; }
+.chart-box-sub { height: 160px; }
+
+/* Simulation bar */
+.sim-bar {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid #3b82f6;
+  border-radius: 8px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 12px;
+}
+
+.sim-inputs {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Modals */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.hidden { display: none; }
+
+.modal-content {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  width: 560px;
+  max-width: 95vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 24px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+}
+
+.modal-content h2 {
+  font-size: 16px;
+  margin-bottom: 16px;
+  color: #fff;
+}
+
+.form-group { margin-bottom: 14px; }
+label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+input, textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  background: #0f172a;
+  color: #fff;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+}
+textarea { font-family: monospace; resize: vertical; }
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.modal-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-wrap">
+    <div class="logo">⚡ FormForward Acute Recovery &amp; Deficit</div>
+    <span class="badge">"The Recovery Hole" Engine</span>
+  </div>
+  <div class="hdr-controls">
+    <button onclick="loadFromMainApp()">↻ Load Live Server Data</button>
+    <button onclick="openDataModal()">📝 Edit TSS Data</button>
+    <button onclick="openSettingsModal()">⚙ Settings</button>
+    <button class="btn-primary" onclick="exportToPNG()">📷 Export PNG</button>
+    <button onclick="window.location.href='/'">← Back to Training Plan</button>
+  </div>
+</header>
+
+<!-- Metric Cards Summary -->
+<div class="kpi-strip">
+  <!-- Recovery Deficit Depth (The Hole) -->
+  <div class="kpi-card" id="cardDeficit">
+    <div class="kpi-title">Current Recovery Deficit ("The Hole")</div>
+    <div class="kpi-val" id="valDeficit">—</div>
+    <div class="kpi-sub" id="subDeficit">Net acute deficit balance</div>
+    <div class="status-tag status-red" id="tagDeficit">Calculating...</div>
+  </div>
+
+  <!-- Recovery Clearance ETA -->
+  <div class="kpi-card" id="cardClearance">
+    <div class="kpi-title">Recovery Clearance Required</div>
+    <div class="kpi-val" id="valClearance">—</div>
+    <div class="kpi-sub" id="subClearance">Days of ≤15 TSS to reach Green (0)</div>
+    <div class="status-tag status-yellow" id="tagClearance">Lagging State</div>
+  </div>
+
+  <!-- Cumulative Lingering Debt -->
+  <div class="kpi-card" id="cardLingering">
+    <div class="kpi-title">Residual Strain from Hard Days</div>
+    <div class="kpi-val" id="valLingering">—</div>
+    <div class="kpi-sub" id="subLingering">Unrecovered stress backlog</div>
+    <div class="status-tag status-yellow" id="tagLingering">Backlog Elevated</div>
+  </div>
+
+  <!-- Acute Spike Index (ASI) -->
+  <div class="kpi-card" id="cardASI">
+    <div class="kpi-title">Latest Acute Spike Index (ASI)</div>
+    <div class="kpi-val" id="valASI">—</div>
+    <div class="kpi-sub" id="subASI">7-day avg TSS ratio</div>
+    <div class="status-tag status-green" id="tagASI">Normal</div>
+  </div>
+</div>
+
+<div class="container">
+  <!-- Interactive Recovery Projection Simulator -->
+  <div class="sim-bar">
+    <div style="font-weight:600;display:flex;align-items:center;gap:6px;">
+      <span>🔮 Forward Recovery Projection:</span>
+      <span style="color:var(--muted);font-weight:normal;">Simulate upcoming days of rest to see the hole fill back up:</span>
+    </div>
+    <div class="sim-inputs">
+      <span>Simulate Next</span>
+      <input type="number" id="simDaysCount" value="3" min="1" max="7" style="width:50px;padding:4px 6px;">
+      <span>Days with TSS:</span>
+      <input type="number" id="simTssVal" value="10" min="0" max="250" style="width:60px;padding:4px 6px;">
+      <button class="btn-primary" onclick="toggleSimulation()" id="btnSimulate">▶ Project Recovery Path</button>
+      <button onclick="resetSimulation()" id="btnResetSim" style="display:none;">✕ Clear Projection</button>
+    </div>
+  </div>
+
+  <!-- PANEL 1: The Recovery Hole (Acute Recovery Deficit Balance) -->
+  <div class="panel">
+    <div class="panel-hdr">
+      <div class="panel-title">
+        <span>🕳️ Acute Recovery Balance — "The Recovery Hole"</span>
+      </div>
+      <div class="panel-legend">
+        <div class="leg-item"><span style="color:#22c55e">■</span> Fresh / Absorbed (≥ 0)</div>
+        <div class="leg-item"><span style="color:#eab308">■</span> Moderate Deficit (-25 to 0)</div>
+        <div class="leg-item"><span style="color:#ef4444">■</span> Deep Hole (&lt; -25) — High Fatigue / Lagging</div>
+        <div class="leg-item"><div class="leg-color" style="background:#38bdf8;border-style:dotted;"></div>Projected Path</div>
+      </div>
+    </div>
+    <div class="chart-box chart-box-hole">
+      <canvas id="chartHole"></canvas>
+    </div>
+  </div>
+
+  <!-- PANEL 2: Standard PMC (CTL, ATL, TSB, TSS) -->
+  <div class="panel">
+    <div class="panel-hdr">
+      <div class="panel-title">
+        <span>📊 Standard PMC vs. Daily TSS Load</span>
+      </div>
+      <div class="panel-legend">
+        <div class="leg-item"><div class="leg-color" style="background:#38bdf8"></div>CTL (42d)</div>
+        <div class="leg-item"><div class="leg-color" style="background:#c084fc"></div>ATL (7d)</div>
+        <div class="leg-item"><div class="leg-color" style="background:#4ade80"></div>TSB (Form)</div>
+        <div class="leg-item"><div class="leg-color" style="background:rgba(148,163,184,0.3)"></div>TSS (Bar)</div>
+      </div>
+    </div>
+    <div class="chart-box chart-box-main">
+      <canvas id="chartPMC"></canvas>
+    </div>
+  </div>
+
+  <!-- PANEL 3: Acute Spike Index & 3-Day Recovery Debt -->
+  <div class="panel">
+    <div class="panel-hdr">
+      <div class="panel-title">
+        <span>⚠️ Acute Spike Index (ASI) &amp; 3-Day Rolling Debt</span>
+      </div>
+      <div class="panel-legend">
+        <div class="leg-item"><span style="color:#22c55e">■</span> Normal (≤ 1.5)</div>
+        <div class="leg-item"><span style="color:#eab308">■</span> Yellow Spike (&gt; 1.5)</div>
+        <div class="leg-item"><span style="color:#ef4444">■</span> Red Danger Spike (&gt; 2.0)</div>
+        <div class="leg-item"><div class="leg-color" style="background:#ec4899"></div>3d Debt Sum</div>
+      </div>
+    </div>
+    <div class="chart-box chart-box-sub">
+      <canvas id="chartASI"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- Data Modal -->
+<div class="modal-overlay hidden" id="dataModal">
+  <div class="modal-content">
+    <h2>Edit / Import Training Data</h2>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Paste TSS data as a JSON array (or CSV format: <code>date,tss</code>):</p>
+    <div class="form-group">
+      <textarea id="dataInput" rows="12"></textarea>
+    </div>
+    <div class="modal-foot">
+      <button onclick="loadSamplePromptData()">Load Prompt Sample (9/22 Spike)</button>
+      <button onclick="closeDataModal()">Cancel</button>
+      <button class="btn-primary" onclick="applyCustomData()">Apply Data</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal-overlay hidden" id="settingsModal">
+  <div class="modal-content">
+    <h2>Athlete &amp; Recovery Hole Configuration</h2>
+    <div class="grid-2">
+      <div class="form-group">
+        <label>FTP (Watts)</label>
+        <input type="number" id="cfgFTP" value="278">
+      </div>
+      <div class="form-group">
+        <label>Daily Recovery Capacity (TSS/day)</label>
+        <input type="number" id="cfgDailyRecoveryCap" value="45" title="How much TSS deficit an athlete clears on a full rest day">
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="form-group">
+        <label>Spike Fatigue Exponent (Penalty)</label>
+        <input type="number" step="0.1" id="cfgSpikeExponent" value="1.3" title="Multiplier for workouts far above baseline (neuromuscular / glycogen drain)">
+      </div>
+      <div class="form-group">
+        <label>Deficit Decay Half-Life (Days)</label>
+        <input type="number" step="0.5" id="cfgDeficitDecay" value="2.5" title="Rate at which residual muscular fatigue clears naturally">
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="form-group">
+        <label>Yellow Deficit Threshold</label>
+        <input type="number" id="cfgYellowHole" value="-20">
+      </div>
+      <div class="form-group">
+        <label>Red Deep Hole Threshold</label>
+        <input type="number" id="cfgRedHole" value="-40">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button onclick="closeSettingsModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveSettings()">Save Settings</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── Default Sample Data ───────────────────────────────────────────────────────
+const SAMPLE_PROMPT_DATA = [
+  {"date": "2026-09-15", "tss": 45},
+  {"date": "2026-09-16", "tss": 88},
+  {"date": "2026-09-17", "tss": 14},
+  {"date": "2026-09-18", "tss": 107},
+  {"date": "2026-09-19", "tss": 58},
+  {"date": "2026-09-20", "tss": 0},
+  {"date": "2026-09-21", "tss": 55},
+  {"date": "2026-09-22", "tss": 185}, // Red-flag spike day (185 TSS)
+  {"date": "2026-09-23", "tss": 11},  // Low TSS, but athlete is still deep in the hole
+  {"date": "2026-09-24", "tss": 72},  // Adding load while in deficit!
+  {"date": "2026-09-25", "tss": 38},  // Lagging fatigue
+  {"date": "2026-09-26", "tss": 51},  // Lagging fatigue
+  {"date": "2026-09-27", "tss": 29}   // Lagging fatigue
+];
+
+let rawTssData = [...SAMPLE_PROMPT_DATA];
+let isSimulating = false;
+
+let config = {
+  ftp: 278,
+  ctlDecay: 42,
+  atlDecay: 7,
+  dailyRecoveryCap: 45, // typical athlete clears ~45 TSS deficit on a full rest day
+  spikeExponent: 1.3,   // non-linear penalty for extreme single-day efforts
+  deficitDecay: 4.0,    // 4-day biological washout half-life for deep muscular micro-trauma
+  yellowHole: -25,
+  redHole: -45,
+  asiYellow: 1.5,
+  asiRed: 2.0
+};
+
+let charts = {
+  hole: null,
+  pmc: null,
+  asi: null
+};
+
+// ─── The Recovery Hole Engine ──────────────────────────────────────────────────
+
+function computeHoleAndMetrics(data, cfg, simulationDays = 0, simTss = 10) {
+  const sorted = [...data].sort((a,b) => a.date.localeCompare(b.date));
+  
+  // Append simulated projection days if requested
+  if (simulationDays > 0 && sorted.length > 0) {
+    const lastDate = new Date(sorted[sorted.length - 1].date);
+    for (let s = 1; s <= simulationDays; s++) {
+      const nextDate = new Date(lastDate);
+      nextDate.setDate(lastDate.getDate() + s);
+      sorted.push({
+        date: nextDate.toISOString().slice(0, 10),
+        tss: simTss,
+        isProjected: true
+      });
+    }
+  }
+
+  const ctlTC = 1.0 - Math.exp(-1.0 / cfg.ctlDecay);
+  const atlTC = 1.0 - Math.exp(-1.0 / cfg.atlDecay);
+  const holeDecayRate = Math.exp(-1.0 / cfg.deficitDecay);
+
+  let ctl = 0;
+  let atl = 0;
+  let deficitBalance = 0; // 0 = fully fresh / recovered, negative = in the hole
+  let daysSinceTrueRest = 0;
+
+  const processed = [];
+
+  for (let i = 0; i < sorted.length; i++) {
+    const item = sorted[i];
+    const tss = parseFloat(item.tss) || 0;
+    
+    // Track True Rest days (TSS <= 10)
+    if (tss <= 10) {
+      daysSinceTrueRest = 0;
+    } else {
+      daysSinceTrueRest++;
+    }
+
+    // 1. Standard PMC
+    ctl = ctl + (tss - ctl) * ctlTC;
+    atl = atl + (tss - atl) * atlTC;
+    const tsb = ctl - atl;
+
+    // 2. Rolling 7-day average baseline
+    const window7 = sorted.slice(Math.max(0, i - 6), i + 1);
+    const sum7 = window7.reduce((acc, x) => acc + (parseFloat(x.tss) || 0), 0);
+    const avg7 = sum7 / window7.length;
+    const asi = avg7 > 0 ? (tss / avg7) : (tss > 0 ? 2.5 : 0);
+
+    // 3. Acute Recovery Deficit Engine ("The Hole")
+    // Rules:
+    // a) TSS > avg7: New acute strain injected with non-linear spike penalty
+    // b) TSS <= 15: True rest / light flush -> Clears deficit hole
+    // c) 16 < TSS <= avg7: Moderate maintenance ride -> 0 clearance (fatigue freeze)
+    //    plus lack-of-rest drag penalty if consecutive days without true rest >= 4
+    const baseline = Math.max(35, avg7);
+    
+    if (tss > baseline) {
+      const excess = tss - baseline;
+      const spikeFactor = Math.pow(tss / baseline, cfg.spikeExponent - 1.0);
+      const acuteDrain = excess * spikeFactor;
+      deficitBalance = (deficitBalance * holeDecayRate) - acuteDrain;
+    } else if (tss <= 15) {
+      // True rest day clearance (0 to 15 TSS)
+      const recoveryGain = Math.max(10, cfg.dailyRecoveryCap - (tss * 1.2));
+      deficitBalance = (deficitBalance * holeDecayRate) + recoveryGain;
+    } else {
+      // Moderate session (16 to ~50 TSS): Glycogen demand prevents deficit clearance
+      // If athlete has gone >= 4 days without true rest, apply cumulative fatigue drag
+      const lackOfRestDrag = Math.max(0, daysSinceTrueRest - 3) * 3.5;
+      deficitBalance = (deficitBalance * holeDecayRate) - lackOfRestDrag;
+    }
+
+    // Ceiling at +15 (fully primed / fresh)
+    deficitBalance = Math.min(15, deficitBalance);
+
+    // 4. 3-Day rolling debt
+    const window3 = sorted.slice(Math.max(0, i - 2), i + 1);
+    const sum3 = window3.reduce((acc, x) => acc + (parseFloat(x.tss) || 0), 0);
+
+    processed.push({
+      date: item.date,
+      tss: tss,
+      ctl: Math.round(ctl * 10) / 10,
+      atl: Math.round(atl * 10) / 10,
+      tsb: Math.round(tsb * 10) / 10,
+      avg7: Math.round(avg7 * 10) / 10,
+      asi: Math.round(asi * 100) / 100,
+      deficit: Math.round(deficitBalance * 10) / 10,
+      daysSinceRest: daysSinceTrueRest,
+      rds: Math.round(sum3 * 10) / 10,
+      isProjected: !!item.isProjected
+    });
+  }
+
+  return processed;
+}
+
+// ─── Rendering All Charts ──────────────────────────────────────────────────────
+
+const commonScales = {
+  x: {
+    type: 'time',
+    time: { unit: 'day', displayFormats: { day: 'MMM d' } },
+    grid: { color: 'rgba(51, 65, 85, 0.4)' },
+    ticks: { color: '#94a3b8', font: { size: 10 } }
+  }
+};
+
+function renderAll(metrics) {
+  const dates = metrics.map(m => m.date);
+  
+  // Real data (excluding projection for KPIs)
+  const actualMetrics = metrics.filter(m => !m.isProjected);
+  const latest = actualMetrics[actualMetrics.length - 1];
+  updateKPIs(latest, actualMetrics);
+
+  // ── 1. The Recovery Hole (Acute Deficit Curve) ──
+  const ctxHole = document.getElementById('chartHole').getContext('2d');
+  if (charts.hole) charts.hole.destroy();
+
+  // Create gradient fill for the Hole
+  const gradient = ctxHole.createLinearGradient(0, 0, 0, 240);
+  gradient.addColorStop(0, 'rgba(34, 197, 94, 0.25)'); // Green at top (fresh)
+  gradient.addColorStop(0.4, 'rgba(234, 179, 8, 0.35)'); // Yellow in middle
+  gradient.addColorStop(1, 'rgba(239, 68, 68, 0.6)');  // Deep Red at bottom
+
+  charts.hole = new Chart(ctxHole, {
+    type: 'line',
+    data: {
+      labels: dates,
+      datasets: [
+        {
+          label: 'Acute Recovery Balance ("The Hole")',
+          data: metrics.map(m => ({ x: m.date, y: m.deficit })),
+          borderColor: (ctx) => {
+            const idx = ctx.index;
+            if (idx !== undefined && metrics[idx]?.isProjected) return '#38bdf8';
+            return '#f87171';
+          },
+          borderDash: (ctx) => {
+            const idx = ctx.index;
+            if (idx !== undefined && metrics[idx]?.isProjected) return [5, 5];
+            return [];
+          },
+          backgroundColor: gradient,
+          fill: {
+            target: 'origin', // Fill from 0 baseline down into the negative hole!
+            above: 'rgba(34, 197, 94, 0.2)',
+            below: 'rgba(239, 68, 68, 0.35)'
+          },
+          borderWidth: 3,
+          tension: 0.3,
+          pointRadius: (ctx) => metrics[ctx.index]?.isProjected ? 3 : 4,
+          pointBackgroundColor: (ctx) => {
+            const val = metrics[ctx.index]?.deficit;
+            if (val >= 0) return '#4ade80';
+            if (val >= config.yellowHole) return '#facc15';
+            return '#ef4444';
+          }
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        annotation: {
+          annotations: {
+            zeroLine: {
+              type: 'line',
+              yMin: 0,
+              yMax: 0,
+              borderColor: 'rgba(74, 222, 128, 0.9)',
+              borderWidth: 2,
+              label: {
+                display: true,
+                content: '✓ FULLY RECOVERED (0)',
+                position: 'start',
+                color: '#4ade80',
+                backgroundColor: 'rgba(15,23,42,0.85)',
+                font: { size: 10, weight: 'bold' }
+              }
+            },
+            yellowLine: {
+              type: 'line',
+              yMin: config.yellowHole,
+              yMax: config.yellowHole,
+              borderColor: 'rgba(234, 179, 8, 0.7)',
+              borderWidth: 1.5,
+              borderDash: [4, 4]
+            },
+            redLine: {
+              type: 'line',
+              yMin: config.redHole,
+              yMax: config.redHole,
+              borderColor: 'rgba(239, 68, 68, 0.85)',
+              borderWidth: 1.8,
+              borderDash: [3, 3]
+            }
+          }
+        },
+        tooltip: {
+          backgroundColor: '#1e293b',
+          borderColor: '#475569',
+          borderWidth: 1,
+          padding: 12,
+          callbacks: {
+            label: (item) => {
+              const m = metrics[item.dataIndex];
+              let statusText = '✓ Fully Fresh & Primed';
+              if (m.deficit <= config.redHole) statusText = '🚨 In a Deep Fatigue Hole (High Recovery Debt)';
+              else if (m.deficit <= config.yellowHole) statusText = '⚠️ Moderate Fatigue Deficit';
+              else if (m.deficit < 0) statusText = '🟡 Slight Recovery Backlog';
+
+              const projText = m.isProjected ? ' [🔮 Projected Simulation]' : '';
+              return [
+                `Recovery Balance: ${m.deficit} TSS (${statusText})${projText}`,
+                `Daily TSS: ${m.tss} | 7d Baseline: ${m.avg7} TSS`,
+                `Days Without True Rest (≤10 TSS): ${m.daysSinceRest}d`
+              ];
+            }
+          }
+        }
+      },
+      scales: {
+        x: commonScales.x,
+        y: {
+          grid: { color: 'rgba(51, 65, 85, 0.4)' },
+          ticks: { color: '#94a3b8', font: { size: 10 } },
+          title: { display: true, text: 'Deficit / Freshness (TSS Balance)', color: '#94a3b8', font: { size: 10 } }
+        }
+      }
+    }
+  });
+
+  // ── 2. Standard PMC ──
+  const ctxPMC = document.getElementById('chartPMC').getContext('2d');
+  if (charts.pmc) charts.pmc.destroy();
+  charts.pmc = new Chart(ctxPMC, {
+    type: 'line',
+    data: {
+      labels: dates,
+      datasets: [
+        {
+          label: 'TSS',
+          data: metrics.map(m => ({ x: m.date, y: m.tss })),
+          type: 'bar',
+          backgroundColor: 'rgba(148, 163, 184, 0.25)',
+          borderRadius: 3,
+          yAxisID: 'yTSS',
+          order: 3
+        },
+        {
+          label: 'Fitness (CTL)',
+          data: metrics.map(m => ({ x: m.date, y: m.ctl })),
+          borderColor: '#38bdf8',
+          borderWidth: 2.5,
+          pointRadius: 0,
+          yAxisID: 'yLoad',
+          order: 1
+        },
+        {
+          label: 'Fatigue (ATL)',
+          data: metrics.map(m => ({ x: m.date, y: m.atl })),
+          borderColor: '#c084fc',
+          borderWidth: 2,
+          pointRadius: 0,
+          yAxisID: 'yLoad',
+          order: 1
+        },
+        {
+          label: 'Form (TSB)',
+          data: metrics.map(m => ({ x: m.date, y: m.tsb })),
+          borderColor: '#4ade80',
+          borderWidth: 1.8,
+          borderDash: [4, 4],
+          pointRadius: 0,
+          yAxisID: 'yTSB',
+          order: 2
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { display: false } },
+      scales: {
+        x: commonScales.x,
+        yLoad: {
+          type: 'linear',
+          position: 'left',
+          grid: { color: 'rgba(51, 65, 85, 0.4)' },
+          ticks: { color: '#94a3b8', font: { size: 10 } }
+        },
+        yTSB: {
+          type: 'linear',
+          position: 'right',
+          grid: { display: false },
+          ticks: { color: '#4ade80', font: { size: 10 } }
+        },
+        yTSS: {
+          type: 'linear',
+          position: 'right',
+          display: false,
+          max: Math.max(...metrics.map(m => m.tss), 200) * 2.5
+        }
+      }
+    }
+  });
+
+  // ── 3. ASI & 3-Day Debt Chart ──
+  const asiColors = metrics.map(m => {
+    if (m.asi >= config.asiRed) return '#ef4444';
+    if (m.asi >= config.asiYellow) return '#eab308';
+    return '#22c55e';
+  });
+
+  const ctxASI = document.getElementById('chartASI').getContext('2d');
+  if (charts.asi) charts.asi.destroy();
+  charts.asi = new Chart(ctxASI, {
+    type: 'bar',
+    data: {
+      labels: dates,
+      datasets: [
+        {
+          label: 'ASI Ratio',
+          data: metrics.map(m => ({ x: m.date, y: m.asi })),
+          backgroundColor: asiColors,
+          borderRadius: 4,
+          yAxisID: 'yASI',
+          order: 2
+        },
+        {
+          label: '3d Debt Sum',
+          data: metrics.map(m => ({ x: m.date, y: m.rds })),
+          type: 'line',
+          borderColor: '#ec4899',
+          borderWidth: 2,
+          pointRadius: 2,
+          yAxisID: 'yDebt',
+          order: 1
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { display: false } },
+      scales: {
+        x: commonScales.x,
+        yASI: {
+          position: 'left',
+          min: 0,
+          max: Math.max(...metrics.map(m => m.asi), 2.5) * 1.15,
+          grid: { color: 'rgba(51, 65, 85, 0.4)' },
+          ticks: { color: '#94a3b8', font: { size: 10 } },
+          title: { display: true, text: 'ASI Ratio', color: '#94a3b8', font: { size: 10 } }
+        },
+        yDebt: {
+          position: 'right',
+          grid: { display: false },
+          ticks: { color: '#ec4899', font: { size: 10 } },
+          title: { display: true, text: '3d Sum (TSS)', color: '#ec4899', font: { size: 10 } }
+        }
+      }
+    }
+  });
+}
+
+// ─── KPI Engine ────────────────────────────────────────────────────────────────
+
+function updateKPIs(latest, actualMetrics) {
+  if (!latest) return;
+
+  // 1. Deficit Depth
+  const valDeficit = document.getElementById('valDeficit');
+  const subDeficit = document.getElementById('subDeficit');
+  const tagDeficit = document.getElementById('tagDeficit');
+
+  valDeficit.textContent = `${latest.deficit} TSS`;
+  if (latest.deficit <= config.redHole) {
+    valDeficit.style.color = '#ef4444';
+    subDeficit.textContent = `Deep fatigue hole (severe lag state)`;
+    tagDeficit.className = 'status-tag status-red';
+    tagDeficit.textContent = '🚨 Deep In The Hole';
+  } else if (latest.deficit <= config.yellowHole) {
+    valDeficit.style.color = '#eab308';
+    subDeficit.textContent = `Moderate recovery debt backlog`;
+    tagDeficit.className = 'status-tag status-yellow';
+    tagDeficit.textContent = '⚠️ Underwater / Fatigue Lag';
+  } else {
+    valDeficit.style.color = '#4ade80';
+    subDeficit.textContent = `Absorbed & fresh`;
+    tagDeficit.className = 'status-tag status-green';
+    tagDeficit.textContent = '✓ Primed & Fresh';
+  }
+
+  // 2. Recovery Clearance Required
+  // Simulate rest days of 10 TSS needed to reach deficit >= 0
+  let simBal = latest.deficit;
+  let daysToZero = 0;
+  const simTC = Math.exp(-1.0 / config.deficitDecay);
+  const baseline = Math.max(35, latest.avg7);
+
+  while (simBal < 0 && daysToZero < 10) {
+    daysToZero++;
+    const gain = Math.min(config.dailyRecoveryCap, (baseline - 10) * 1.3);
+    simBal = (simBal * simTC) + gain;
+  }
+
+  const valClearance = document.getElementById('valClearance');
+  const subClearance = document.getElementById('subClearance');
+  const tagClearance = document.getElementById('tagClearance');
+
+  if (daysToZero > 0) {
+    valClearance.textContent = `${daysToZero} Day${daysToZero > 1 ? 's' : ''}`;
+    subClearance.textContent = `Required rest (≤15 TSS) to fill the hole`;
+    tagClearance.className = daysToZero >= 2 ? 'status-tag status-red' : 'status-tag status-yellow';
+    tagClearance.textContent = daysToZero >= 2 ? '🛑 Urgent Rest Required' : '⚠️ Recovery Day Recommended';
+  } else {
+    valClearance.textContent = '0 Days';
+    subClearance.textContent = 'Hole is completely clear';
+    tagClearance.className = 'status-tag status-green';
+    tagClearance.textContent = '⚡ Ready for High Load';
+  }
+
+  // 3. Lingering Residual Debt from hard days
+  const hardDays = actualMetrics.filter(m => m.asi >= 1.5 || m.tss > 100);
+  document.getElementById('valLingering').textContent = `${Math.abs(Math.min(0, latest.deficit))} TSS`;
+  document.getElementById('subLingering').textContent = `${hardDays.length} hard session(s) detected in window`;
+  const tagLing = document.getElementById('tagLingering');
+  if (latest.deficit < config.yellowHole) {
+    tagLing.className = 'status-tag status-red';
+    tagLing.textContent = 'High Backlog';
+  } else if (latest.deficit < 0) {
+    tagLing.className = 'status-tag status-yellow';
+    tagLing.textContent = 'Moderate Backlog';
+  } else {
+    tagLing.className = 'status-tag status-green';
+    tagLing.textContent = 'Cleared';
+  }
+
+  // 4. ASI
+  document.getElementById('valASI').textContent = latest.asi.toFixed(2);
+  document.getElementById('subASI').textContent = `Today: ${latest.tss} TSS | 7d Baseline: ${latest.avg7} TSS`;
+  const tagASI = document.getElementById('tagASI');
+  if (latest.asi >= config.asiRed) {
+    tagASI.className = 'status-tag status-red';
+    tagASI.textContent = '🚨 Extreme Spike';
+  } else if (latest.asi >= config.asiYellow) {
+    tagASI.className = 'status-tag status-yellow';
+    tagASI.textContent = '⚠️ Elevated Spike';
+  } else {
+    tagASI.className = 'status-tag status-green';
+    tagASI.textContent = '✓ Normal';
+  }
+}
+
+// ─── Simulation & Interactive Path ─────────────────────────────────────────────
+
+function toggleSimulation() {
+  const days = parseInt(document.getElementById('simDaysCount').value) || 3;
+  const tss = parseFloat(document.getElementById('simTssVal').value) || 10;
+  
+  isSimulating = true;
+  document.getElementById('btnResetSim').style.display = 'inline-flex';
+  document.getElementById('btnSimulate').textContent = '↻ Re-project Path';
+
+  const metrics = computeHoleAndMetrics(rawTssData, config, days, tss);
+  renderAll(metrics);
+}
+
+function resetSimulation() {
+  isSimulating = false;
+  document.getElementById('btnResetSim').style.display = 'none';
+  document.getElementById('btnSimulate').textContent = '▶ Project Recovery Path';
+  refreshDashboard();
+}
+
+function refreshDashboard() {
+  const metrics = computeHoleAndMetrics(rawTssData, config, 0);
+  renderAll(metrics);
+}
+
+// ─── Live Data & Sync ──────────────────────────────────────────────────────────
+
+async function loadFromMainApp() {
+  try {
+    const res = await fetch('http://localhost:5678/api/data');
+    if (!res.ok) throw new Error('Could not connect to server');
+    const data = await res.json();
+    
+    const dateMap = {};
+    for (const [d, obj] of Object.entries(data.completed || {})) {
+      dateMap[d] = parseFloat(obj.tss) || 0;
+    }
+    for (const [d, obj] of Object.entries(data.planned || {})) {
+      if (!(d in dateMap)) {
+        dateMap[d] = parseFloat(obj.tss) || 0;
+      }
+    }
+    
+    const formatted = Object.entries(dateMap)
+      .map(([date, tss]) => ({ date, tss }))
+      .sort((a,b) => a.date.localeCompare(b.date));
+
+    if (formatted.length > 0) {
+      rawTssData = formatted.slice(-60);
+      if (data.settings) {
+        config.ftp = parseFloat(data.settings.ftp) || 278;
+        config.ctlDecay = parseFloat(data.settings.ctlDecay) || 42;
+        config.atlDecay = parseFloat(data.settings.atlDecay) || 7;
+      }
+      refreshDashboard();
+      alert(`Loaded ${rawTssData.length} days of training data from local server!`);
+    }
+  } catch (err) {
+    alert(`Failed to load server data: ${err.message}. Using current dataset.`);
+  }
+}
+
+function openDataModal() {
+  document.getElementById('dataInput').value = JSON.stringify(rawTssData, null, 2);
+  document.getElementById('dataModal').classList.remove('hidden');
+}
+
+function closeDataModal() {
+  document.getElementById('dataModal').classList.add('hidden');
+}
+
+function loadSamplePromptData() {
+  document.getElementById('dataInput').value = JSON.stringify(SAMPLE_PROMPT_DATA, null, 2);
+}
+
+function applyCustomData() {
+  const text = document.getElementById('dataInput').value.trim();
+  try {
+    if (text.startsWith('[') || text.startsWith('{')) {
+      const parsed = JSON.parse(text);
+      rawTssData = Array.isArray(parsed) ? parsed : Object.entries(parsed).map(([date, tss]) => ({ date, tss: typeof tss === 'object' ? tss.tss : tss }));
+    } else {
+      const lines = text.split('\n');
+      const list = [];
+      for (const line of lines) {
+        const parts = line.split(',');
+        if (parts.length >= 2 && /^\d{4}-\d{2}-\d{2}$/.test(parts[0].trim())) {
+          list.push({ date: parts[0].trim(), tss: parseFloat(parts[1]) || 0 });
+        }
+      }
+      if (list.length) rawTssData = list;
+    }
+    closeDataModal();
+    refreshDashboard();
+  } catch (e) {
+    alert('Invalid JSON / CSV format: ' + e.message);
+  }
+}
+
+function openSettingsModal() {
+  document.getElementById('cfgFTP').value = config.ftp;
+  document.getElementById('cfgDailyRecoveryCap').value = config.dailyRecoveryCap;
+  document.getElementById('cfgSpikeExponent').value = config.spikeExponent;
+  document.getElementById('cfgDeficitDecay').value = config.deficitDecay;
+  document.getElementById('cfgYellowHole').value = config.yellowHole;
+  document.getElementById('cfgRedHole').value = config.redHole;
+  document.getElementById('settingsModal').classList.remove('hidden');
+}
+
+function closeSettingsModal() {
+  document.getElementById('settingsModal').classList.add('hidden');
+}
+
+function saveSettings() {
+  config.ftp = parseFloat(document.getElementById('cfgFTP').value) || 278;
+  config.dailyRecoveryCap = parseFloat(document.getElementById('cfgDailyRecoveryCap').value) || 45;
+  config.spikeExponent = parseFloat(document.getElementById('cfgSpikeExponent').value) || 1.3;
+  config.deficitDecay = parseFloat(document.getElementById('cfgDeficitDecay').value) || 2.5;
+  config.yellowHole = parseFloat(document.getElementById('cfgYellowHole').value) || -20;
+  config.redHole = parseFloat(document.getElementById('cfgRedHole').value) || -40;
+  closeSettingsModal();
+  refreshDashboard();
+}
+
+function exportToPNG() {
+  const chart = charts.hole;
+  if (!chart) return;
+  const link = document.createElement('a');
+  link.download = `recovery-deficit-hole-${new Date().toISOString().slice(0,10)}.png`;
+  link.href = chart.toBase64Image();
+  link.click();
+}
+
+// ─── Boot ──────────────────────────────────────────────────────────────────────
+refreshDashboard();
+</script>
+</body>
+</html>

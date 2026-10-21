@@ -1,0 +1,239 @@
+{
+  "planned": {
+    "2026-04-02": {
+      "name": "VO2max Intervals",
+      "tss": 80,
+      "duration_minutes": 60,
+      "notes": "15min warmup ramp 135→205W (2×20s@290W pick-ups at min 12+14) | 5×5min@285W / 3min@155W between sets | 8min cooldown 4min@175W + 4min@140W"
+    },
+    "2026-04-03": {
+      "name": "Openers",
+      "tss": 46,
+      "duration_minutes": 60,
+      "notes": "20min easy warmup ramp 135→180W | 3×90s@255W / 5min@155W recovery | 25min easy cooldown 15min@165W + 10min@140W | Pre-race priming — most of this ride is easy, just 3 quality efforts"
+    },
+    "2026-04-04": {
+      "name": "Zwift Race",
+      "tss": 97,
+      "duration_minutes": 75,
+      "notes": "RACE — race hard, this is your hard session for the week | RACE DAY — back off Tue/Thu 10% if legs feel heavy pre-race"
+    },
+    "2026-04-05": {
+      "name": "Long Ride — outdoor (~3.5h)",
+      "tss": 180,
+      "duration_minutes": 210,
+      "notes": "Outside: 3.5h @ 175–215W, trail riding, keep it aerobic but don't baby it | Inside if needed: 15min warmup | 4×10min@241W / 5min@155W | 20min cooldown | Prioritize outdoor/trail"
+    },
+    "2026-04-07": {
+      "name": "Race Simulation",
+      "tss": 82,
+      "duration_minutes": 60,
+      "notes": "12min warmup ramp 135→200W | Block 1: 6×(45s@365W / 45s@155W) = 9min | 3min recovery @150W | Block 2: 6×(45s@375W / 45s@155W) = 9min | 3min recovery @150W | Block 3: 6×(45s@385W / 45s@155W) = 9min | 5min@268W threshold | 10min cooldown 5min@175W + 5min@140W"
+    },
+    "2026-04-09": {
+      "name": "VO2max Intervals",
+      "tss": 80,
+      "duration_minutes": 60,
+      "notes": "15min warmup ramp 135→205W (2×20s@290W pick-ups at min 12+14) | 5×5min@285W / 3min@155W between sets | 8min cooldown 4min@175W + 4min@140W"
+    },
+    "2026-04-10": {
+      "name": "Openers",
+      "tss": 46,
+      "duration_minutes": 60,
+      "notes": "20min easy warmup ramp 135→180W | 4×60s@265W / 4min@155W recovery | 24min easy cooldown 14min@165W + 10min@140W | Pre-race priming — most of this ride is easy, just 4 quality efforts"
+    },
+    "2026-04-11": {
+      "name": "Anaerobic Capacity",
+      "tss": 75,
+      "duration_minutes": 63,
+      "notes": "15min warmup ramp 135→205W | 8×30s ALL-OUT (520–620W+) / 3min@155W recovery = 25min | 23min cooldown 15min@175W + 8min@140W | Sprint power focus — go absolute max on each effort"
+    },
+    "2026-04-12": {
+      "name": "Long Ride — outdoor (~3.5h)",
+      "tss": 180,
+      "duration_minutes": 210,
+      "notes": "Outside: 3.5h @ 175–215W, trail riding, technical skills focus | Inside if needed: 15min warmup | 4×10min@246W / 5min@155W | 20min cooldown | Prioritize outdoor/trail"
+    },
+    "2026-04-14": {
+      "name": "Race Simulation",
+      "tss": 82,
+      "duration_minutes": 60,
+      "notes": "12min warmup ramp 135→200W | Block 1: 6×(45s@375W / 45s@155W) = 9min | 3min recovery @150W | Block 2: 6×(45s@385W / 45s@155W) = 9min | 3min recovery @150W | Block 3: 6×(45s@395W / 45s@155W) = 9min | 5min@268W threshold | 10min cooldown 5min@175W + 5min@140W | Peak sprint power week"
+    },
+    "2026-04-16": {
+      "name": "VO2max Intervals",
+      "tss": 80,
+      "duration_minutes": 60,
+      "notes": "15min warmup ramp 135→205W | 6×4min@290W / 3min@155W between sets = 39min | 6min cooldown easy @140W | Race sharpness — slightly shorter reps, higher power vs 5×5"
+    },
+    "2026-04-17": {
+      "name": "Openers",
+      "tss": 46,
+      "duration_minutes": 60,
+      "notes": "20min easy warmup ramp 135→180W | 3×90s@258W / 5min@155W recovery | 25min easy cooldown 15min@165W + 10min@140W | Pre-race priming — most of this ride is easy"
+    },
+    "2026-04-18": {
+      "name": "Zwift Race",
+      "tss": 97,
+      "duration_minutes": 75,
+      "notes": "RACE — race hard, this is your hard session for the week | RACE DAY — back off Tue/Thu 10% if legs feel heavy pre-race"
+    },
+    "2026-04-19": {
+      "name": "Long Ride — outdoor, shorter (recovery week)",
+      "tss": 100,
+      "duration_minutes": 120,
+      "notes": "Outside: 2h easy @ 165–200W, trail focus, no hard efforts | Inside if needed: 15min warmup | 4×10min@241W / 5min@155W | 20min cooldown | Recovery week — keep power honest"
+    },
+    "2026-04-21": {
+      "name": "Race Simulation — Recovery Week",
+      "tss": 54,
+      "duration_minutes": 48,
+      "notes": "12min warmup ramp 135→195W | Block 1: 5×(45s@355W / 45s@155W) = 7.5min | 3min recovery @150W | Block 2: 5×(45s@355W / 45s@155W) = 7.5min | 5min@260W threshold | 13min cooldown @145W | RECOVERY WEEK — same format, reduced volume"
+    },
+    "2026-04-23": {
+      "name": "VO2max — Recovery Week",
+      "tss": 53,
+      "duration_minutes": 44,
+      "notes": "12min warmup ramp 135→200W | 3×5min@275W / 3min@150W between sets = 21min | 11min cooldown 6min@170W + 5min@140W | RECOVERY WEEK — 3 sets only, lower power"
+    },
+    "2026-04-24": {
+      "name": "Recovery",
+      "tss": 35,
+      "duration_minutes": 60,
+      "notes": "60min steady @ 160–180W — no structure, no intervals | RECOVERY WEEK — keep HR below 130, just spin"
+    },
+    "2026-04-25": {
+      "name": "Easy Openers",
+      "tss": 41,
+      "duration_minutes": 58,
+      "notes": "20min easy warmup @150–175W | 3×60s@255W / 4min@150W recovery | 28min easy cooldown @150–165W | RECOVERY WEEK — very light, just a few pick-ups"
+    },
+    "2026-04-26": {
+      "name": "Easy Trail Ride — aerobic",
+      "tss": 85,
+      "duration_minutes": 90,
+      "notes": "90min easy outdoor @ 175–200W — trail or gravel | No intervals, no structure, HR conversational | RECOVERY WEEK — skills focus, enjoy it"
+    },
+    "2026-04-28": {
+      "name": "Race Simulation",
+      "tss": 83,
+      "duration_minutes": 60,
+      "notes": "12min warmup ramp 135→200W | Block 1: 6×(45s@385W / 45s@155W) = 9min | 3min recovery @150W | Block 2: 6×(45s@385W / 45s@155W) = 9min | 3min recovery @150W | Block 3: 5×(1min@375W / 1min@155W) = 10min | 3min recovery @150W | 5min@268W threshold | 6min cooldown @140W"
+    },
+    "2026-04-30": {
+      "name": "VO2max Intervals",
+      "tss": 82,
+      "duration_minutes": 60,
+      "notes": "15min warmup ramp 135→205W | 5×5min@290W / 3min@155W between sets = 37min | 8min cooldown 4min@175W + 4min@140W | Bump to 290W — legs should be sharp post-recovery week"
+    },
+    "2026-05-01": {
+      "name": "Openers",
+      "tss": 46,
+      "duration_minutes": 60,
+      "notes": "20min easy warmup ramp 135→180W | 3×90s@258W / 5min@155W recovery | 25min easy cooldown 15min@165W + 10min@140W | Pre-race priming — most of this ride is easy"
+    },
+    "2026-05-02": {
+      "name": "Zwift Race",
+      "tss": 97,
+      "duration_minutes": 75,
+      "notes": "RACE — race hard, this is your hard session for the week | RACE DAY — back off Tue/Thu 10% if legs feel heavy pre-race"
+    },
+    "2026-05-03": {
+      "name": "Long Trail Ride — race-pace efforts (~3.5h)",
+      "tss": 190,
+      "duration_minutes": 210,
+      "notes": "Outside: 3.5h with 4–6 race-pace efforts of 3–5min scattered through the ride | Keep the base aerobic @ 175–210W, punch it on technical climbs | Race-specific training — simulate what May 31 will feel like"
+    },
+    "2026-05-05": {
+      "name": "Race Simulation — Last Hard Session",
+      "tss": 85,
+      "duration_minutes": 60,
+      "notes": "10min warmup ramp 140→210W | Block 1: 8×(45s@390W / 45s@155W) = 12min | 3min recovery @150W | Block 2: 8×(45s@400W / 45s@155W) = 12min | 3min recovery @150W | 5min@275W threshold | 5min@268W threshold | 10min cooldown 5min@175W + 5min@140W | Last hard session before vacation — go for it"
+    },
+    "2026-05-14": {
+      "name": "Easy Return",
+      "tss": 26,
+      "duration_minutes": 45,
+      "notes": "5min very easy spin @130W | 35min steady @165–180W — no structure, just aerobic | 5min easy cooldown @130W | Back from vacation — keep it very easy, shake the legs out"
+    },
+    "2026-05-15": {
+      "name": "Recovery Spin",
+      "tss": 25,
+      "duration_minutes": 45,
+      "notes": "45min @ 155–170W — HR below 125bpm, no structure, no intervals | COMEBACK Day 2 — flush the legs, nothing more"
+    },
+    "2026-05-16": {
+      "name": "Sweet Spot — Comeback",
+      "tss": 75,
+      "duration_minutes": 65,
+      "notes": "15min warmup ramp 135→200W | 15min@241W sweet spot | 5min@155W recovery | 15min@248W sweet spot | 5min@155W recovery | 10min cooldown 5min@185W + 5min@145W | COMEBACK — first real session back, gauge how legs feel"
+    },
+    "2026-05-17": {
+      "name": "Easy Trail — Endurance",
+      "tss": 50,
+      "duration_minutes": 75,
+      "notes": "75min easy @ 175–200W — outdoor preferred, no structure | COMEBACK — stay aerobic, HR conversational, skills focus"
+    },
+    "2026-05-19": {
+      "name": "VO2max — Comeback",
+      "tss": 66,
+      "duration_minutes": 56,
+      "notes": "15min warmup ramp 135→200W | 4×4min@285W / 4min@155W between sets = 28min | 13min cooldown 7min@175W + 6min@140W | COMEBACK — reduced reps vs normal, test the legs"
+    },
+    "2026-05-21": {
+      "name": "Threshold — Comeback",
+      "tss": 61,
+      "duration_minutes": 51,
+      "notes": "15min warmup ramp 135→200W | 2×13min@255W / 6min@155W recovery = 32min | 4min easy cooldown @140W | COMEBACK — controlled, not all-out, feel the fitness coming back"
+    },
+    "2026-05-22": {
+      "name": "Recovery",
+      "tss": 26,
+      "duration_minutes": 45,
+      "notes": "45min easy @ 155–175W — no structure, no intervals | RACE WEEK — easy day before race week sharpening"
+    },
+    "2026-05-23": {
+      "name": "Race Sharpening",
+      "tss": 65,
+      "duration_minutes": 60,
+      "notes": "15min warmup ramp 135→200W | 6×30s ALL-OUT (530W+) / 3min@150W recovery = 18min | 5min easy @160W | 3×3min@275W / 2min@155W between sets = 13min | 9min cooldown 5min@175W + 4min@140W | RACE WEEK — neuromuscular priming, short and sharp"
+    },
+    "2026-05-24": {
+      "name": "Trail Ride",
+      "tss": 63,
+      "duration_minutes": 90,
+      "notes": "90min easy outdoor @ 175–200W — trail skills, HR conversational | RACE WEEK — course preview if possible, no hard efforts"
+    },
+    "2026-05-26": {
+      "name": "Openers",
+      "tss": 42,
+      "duration_minutes": 55,
+      "notes": "15min easy warmup ramp 135→185W | 4×(30s@360W / 30s@155W) = 4min neuromuscular block | 5min easy @155W | 3×2min@255W / 3min@155W between sets = 12min | 19min easy cooldown 12min@165W + 7min@140W | RACE WEEK — last hard-ish effort, but mostly easy"
+    },
+    "2026-05-28": {
+      "name": "Openers Only",
+      "tss": 43,
+      "duration_minutes": 58,
+      "notes": "15min easy warmup ramp 130→185W | 3×60s@268W / 5min@150W recovery = 13min | 3×30s@330W / 3min@150W recovery = 8min | 22min easy cooldown 12min@165W + 10min@135W | RACE WEEK — priming only, save everything"
+    },
+    "2026-05-29": {
+      "name": "Recovery or Rest",
+      "tss": 19,
+      "duration_minutes": 35,
+      "notes": "30–35min very easy @ 150–168W or complete rest | RACE WEEK — save everything for Sunday, legs only if they feel stiff"
+    },
+    "2026-05-30": {
+      "name": "Pre-ride",
+      "tss": 15,
+      "duration_minutes": 25,
+      "notes": "20min easy @150–165W + 5min spin | Course feel only, no efforts | RACE WEEK — save everything for tomorrow"
+    },
+    "2026-05-31": {
+      "name": "🏁 RACE DAY",
+      "tss": 162,
+      "duration_minutes": 120,
+      "notes": "RACE — May 31st MTB Race | 🏆 Execute your race plan. Trust the training."
+    }
+  },
+  "settings": {}
+}
