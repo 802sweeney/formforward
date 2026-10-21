@@ -1,0 +1,11 @@
+# Strava API Configuration
+STRAVA_CLIENT_ID=your_client_id_here
+STRAVA_CLIENT_SECRET=your_client_secret_here
+STRAVA_REFRESH_TOKEN=your_refresh_token_here
+STRAVA_ACCESS_TOKEN=your_access_token_here 
+
+PG_HOST=your-db-host.amazonaws.com
+PG_PORT=5432
+PG_DATABASE=your_db_name
+PG_USER=your_db_user
+PG_PASSWORD=your_db_password 
