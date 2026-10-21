@@ -61,7 +61,7 @@ def calc_activity_tss(row, ftp=278.0, lthr=165.0):
 
     return 0.0
 
-# ── Coach Memory Seed Data (derived from AGENTS.md and athlete profile) ────────
+# ── Coach Memory Seed Data (default rules, seeded once on first run) ───────────
 
 INITIAL_MEMORIES = [
     ("rule", "Schedule: Monday and Wednesday are mandatory rest days (0 TSS). Do not schedule intensity or Zone 2 on these days without explicit athlete permission."),

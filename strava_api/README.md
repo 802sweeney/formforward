@@ -1,5 +1,7 @@
 # Strava API Data Analysis
 
+> **Note:** This directory is an earlier, standalone exploration of Strava API access (AWS Lambda + Postgres). It predates and is independent of the main FormForward app one level up, which syncs Strava data into local SQLite via `strava_import.py` instead. Kept here for reference; not part of the live app's data path.
+
 A Python application to connect to the Strava API and pull your activity data for analysis and visualization.
 
 ## Features

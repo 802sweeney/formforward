@@ -9,6 +9,7 @@ training.db
 strava_token.json
 token_cache.json
 training_snapshot.json
+current_date.txt
 
 # Python
 __pycache__/
