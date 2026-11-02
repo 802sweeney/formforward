@@ -1646,6 +1646,7 @@ async function openCoach() {
   document.getElementById('coachDrawer').classList.add('open');
   // Sync model picker to current state
   document.getElementById('coachModelPicker').value = coachState.model;
+  renderCoachMessages();
   await loadCoachData();
   document.getElementById('coachInput').focus();
 }
@@ -1680,9 +1681,13 @@ async function loadCoachData() {
     coachState.dayOfWeek = ctx.day_of_week;
     document.getElementById('coachTodayPill').textContent = `📅 ${ctx.today} (${ctx.day_of_week})`;
     
-    const todayPmc = pmcData ? pmcData[todayStr()] : null;
-    if (todayPmc) {
-      document.getElementById('coachPmcPill').textContent = `📊 CTL: ${Math.round(todayPmc.ctl)} | ATL: ${Math.round(todayPmc.atl)} | TSB: ${todayPmc.tsb > 0 ? '+' : ''}${Math.round(todayPmc.tsb)}`;
+    try {
+      const todayPmc = typeof getTodayStats === 'function' ? getTodayStats() : null;
+      if (todayPmc) {
+        document.getElementById('coachPmcPill').textContent = `📊 CTL: ${Math.round(todayPmc.ctl)} | ATL: ${Math.round(todayPmc.atl)} | TSB: ${todayPmc.tsb > 0 ? '+' : ''}${Math.round(todayPmc.tsb)}`;
+      }
+    } catch (e) {
+      console.warn('Could not compute today PMC:', e);
     }
 
     renderCoachMessages();
@@ -1695,6 +1700,9 @@ function formatMarkdown(text) {
   if (!text) return '';
   let html = text
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/^### (.*?)$/gm, '<h4 style="margin:10px 0 4px 0;font-size:13px;font-weight:700;">$1</h4>')
+    .replace(/^## (.*?)$/gm, '<h3 style="margin:12px 0 6px 0;font-size:14px;font-weight:700;">$1</h3>')
+    .replace(/^---$/gm, '<hr style="border:none;border-top:1px solid var(--border);margin:10px 0;">')
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.*?)\*/g, '<em>$1</em>')
     .replace(/`([^`]+)`/g, '<code>$1</code>')
