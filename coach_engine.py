@@ -220,7 +220,9 @@ def assemble_coach_context():
         
         # 4. Phases & Races
         phases = [dict(r) for r in c.execute('SELECT start_date, end_date, name FROM phases ORDER BY start_date').fetchall()]
-        races = [dict(r) for r in c.execute("SELECT date, name, notes FROM workouts WHERE name LIKE '%🏁%' OR notes LIKE '%race%' ORDER BY date").fetchall()]
+        races = [dict(r) for r in c.execute("SELECT date, name, notes FROM workouts WHERE name LIKE '%🏁%' AND date >= ? ORDER BY date", (today_iso,)).fetchall()]
+        last_race_row = c.execute("SELECT date, name FROM workouts WHERE name LIKE '%🏁%' AND date < ? ORDER BY date DESC LIMIT 1", (today_iso,)).fetchone()
+        last_race = dict(last_race_row) if last_race_row else None
         
         # 5. Coach Memory
         memories = [dict(r) for r in c.execute('SELECT id, category, content FROM coach_memory WHERE active=1 ORDER BY category, id').fetchall()]
@@ -466,10 +468,13 @@ def assemble_coach_context():
         'active_memories': memories,
         'phases': phases,
         'target_races': races,
+        'upcoming_target_races': races,
+        'last_completed_race': last_race,
         'upcoming_calendar': upcoming_calendar,
         'last_14_days_training': last_14_days_training,
         'last_14_days_summary': last_14_days_summary,
         'last_14_days_text_summary': last_14_days_text_summary,
+        'prior_activities_days_15_to_28': [a for a in recent_activities if a['date'] < start_14d.isoformat()][:10],
         'recent_activities': recent_activities[:20]
     }
 
@@ -704,10 +709,11 @@ def query_gemini(api_key, user_message, context, history_messages=None, model=No
         "athlete_settings": context['athlete_settings'],
         "persistent_rules_and_memory": [m['content'] for m in context['active_memories']],
         "active_phases": context['phases'],
-        "target_races": context['target_races'],
+        "upcoming_target_races": context.get('upcoming_target_races', context.get('target_races', [])),
+        "last_completed_race": context.get('last_completed_race'),
         "completed_training_and_tss_last_14_days": context.get('last_14_days_training', []),
         "recent_14_day_workload_summary": context.get('last_14_days_summary', {}),
-        "recent_completed_activities_last_28d": context['recent_activities'],
+        "prior_activities_days_15_to_28": context.get('prior_activities_days_15_to_28', []),
         "upcoming_planned_calendar": context['upcoming_calendar']
     }, indent=2)
 
@@ -726,14 +732,30 @@ def query_gemini(api_key, user_message, context, history_messages=None, model=No
         "parts": [{"text": f"Understood. I have loaded your full training state as of {context['today']} ({context['day_of_week']}), your completed workload and day-by-day TSS for the last 14 days, your active phases, recent completed Strava rides, upcoming plan, and all persistent rules. How can I help you optimize your training today?"}]
     })
     
-    # Append recent history
+    # Clean history so turns alternate strictly: user -> model
+    clean_history = []
     if history_messages:
-        for msg in history_messages[-6:]:
-            role = "user" if msg['role'] == 'user' else "model"
-            contents.append({
-                "role": role,
-                "parts": [{"text": msg['content']}]
-            })
+        last_role = None
+        for h in history_messages:
+            role = "user" if h.get('role') == 'user' else "model"
+            content = (h.get('content') or '').strip()
+            if not content:
+                continue
+            if role == last_role:
+                if role == 'user':
+                    clean_history[-1]['content'] = content
+                continue
+            clean_history.append({'role': role, 'content': content})
+            last_role = role
+
+        if clean_history and clean_history[-1]['role'] == 'user':
+            clean_history.pop()
+
+    for h in clean_history[-6:]:
+        contents.append({
+            "role": h['role'],
+            "parts": [{"text": h['content']}]
+        })
             
     # Append current user message
     contents.append({
@@ -853,31 +875,67 @@ def query_claude(api_key, user_message, context, history_messages=None, model=No
         "athlete_settings": context['athlete_settings'],
         "persistent_rules_and_memory": [m['content'] for m in context['active_memories']],
         "active_phases": context['phases'],
-        "target_races": context['target_races'],
+        "upcoming_target_races": context.get('upcoming_target_races', context.get('target_races', [])),
+        "last_completed_race": context.get('last_completed_race'),
         "completed_training_and_tss_last_14_days": context.get('last_14_days_training', []),
         "recent_14_day_workload_summary": context.get('last_14_days_summary', {}),
-        "recent_completed_activities_last_28d": context['recent_activities'],
+        "prior_activities_days_15_to_28": context.get('prior_activities_days_15_to_28', []),
         "upcoming_planned_calendar": context['upcoming_calendar']
     }, indent=2)
 
     text_summary = context.get('last_14_days_text_summary', '')
 
     messages = []
-    # Context primer turn
-    messages.append({"role": "user", "content": f"SYSTEM & ATHLETE CONTEXT:\n{context_str}\n\n{text_summary}\n\nPlease acknowledge and wait for instructions."})
-    messages.append({"role": "assistant", "content": f"Understood. I have loaded your full training state as of {context['today']} ({context['day_of_week']}), your completed workload and day-by-day TSS for the last 14 days, your active phases, recent completed Strava rides, upcoming plan, and all persistent rules. How can I help you optimize your training today?"})
+    # Context primer turn with ephemeral cache control
+    messages.append({
+        "role": "user",
+        "content": [
+            {
+                "type": "text",
+                "text": f"SYSTEM & ATHLETE CONTEXT:\n{context_str}\n\n{text_summary}\n\nPlease acknowledge and wait for instructions.",
+                "cache_control": {"type": "ephemeral"}
+            }
+        ]
+    })
+    messages.append({
+        "role": "assistant",
+        "content": f"Understood. I have loaded your full training state as of {context['today']} ({context['day_of_week']}), your completed workload and day-by-day TSS for the last 14 days, your active phases, recent completed Strava rides, upcoming plan, and all persistent rules. How can I help you optimize your training today?"
+    })
 
+    # Clean history so turns alternate strictly: user -> assistant
+    clean_history = []
     if history_messages:
-        for msg in history_messages[-6:]:
-            role = "user" if msg['role'] == 'user' else "assistant"
-            messages.append({"role": role, "content": msg['content']})
+        last_role = None
+        for h in history_messages:
+            role = "user" if h.get('role') == 'user' else "assistant"
+            content = (h.get('content') or '').strip()
+            if not content:
+                continue
+            if role == last_role:
+                if role == 'user':
+                    clean_history[-1]['content'] = content
+                continue
+            clean_history.append({'role': role, 'content': content})
+            last_role = role
+
+        if clean_history and clean_history[-1]['role'] == 'user':
+            clean_history.pop()
+
+    for h in clean_history[-6:]:
+        messages.append({'role': h['role'], 'content': h['content']})
 
     messages.append({"role": "user", "content": user_message})
 
     payload = {
         "model": target_model,
         "max_tokens": 4096,
-        "system": system_text,
+        "system": [
+            {
+                "type": "text",
+                "text": system_text,
+                "cache_control": {"type": "ephemeral"}
+            }
+        ],
         "tools": CLAUDE_TOOLS,
         "messages": messages
     }
@@ -895,7 +953,7 @@ def query_claude(api_key, user_message, context, history_messages=None, model=No
     )
 
     try:
-        with urllib.request.urlopen(req, timeout=60) as response:
+        with urllib.request.urlopen(req, timeout=120) as response:
             res_json = json.loads(response.read().decode('utf-8'))
 
         coach_text = ""

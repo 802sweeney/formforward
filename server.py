@@ -468,14 +468,16 @@ class Handler(BaseHTTPRequestHandler):
             model = body.get('model') or 'gemini-3.7-flash'
             api_key = body.get('apiKey') or None  # let query_coach resolve from DB/env
 
-            # Save user message to database
+            # Fetch prior history before saving current user message
             with db_conn() as c:
-                c.execute('INSERT INTO coach_messages (role, content, created_at) VALUES (?,?,?)',
-                          ('user', msg, datetime.now().isoformat()))
-                c.commit()
                 hist_rows = c.execute('SELECT role, content FROM coach_messages ORDER BY id DESC LIMIT 10').fetchall()
                 hist = [dict(r) for r in hist_rows]
                 hist.reverse()
+
+                # Save user message to database
+                c.execute('INSERT INTO coach_messages (role, content, created_at) VALUES (?,?,?)',
+                          ('user', msg, datetime.now().isoformat()))
+                c.commit()
 
             context = coach_engine.assemble_coach_context()
             res = coach_engine.query_coach(msg, context, history_messages=hist, model=model, api_key=api_key)
