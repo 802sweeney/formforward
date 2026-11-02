@@ -411,7 +411,8 @@ class Handler(BaseHTTPRequestHandler):
         elif p == '/api/coach/history':
             coach_engine.init_coach_db()
             with db_conn() as c:
-                msgs = [dict(r) for r in c.execute('SELECT id, role, content, proposed_json, applied, created_at FROM coach_messages ORDER BY id ASC LIMIT 50').fetchall()]
+                msgs_desc = [dict(r) for r in c.execute('SELECT id, role, content, proposed_json, applied, created_at FROM coach_messages ORDER BY id DESC LIMIT 100').fetchall()]
+                msgs = list(reversed(msgs_desc))
                 mems = [dict(r) for r in c.execute('SELECT id, category, content, active, created_at FROM coach_memory ORDER BY category, id').fetchall()]
             has_gemini = bool(coach_engine.get_gemini_api_key())
             has_claude = bool(coach_engine.get_claude_api_key())
