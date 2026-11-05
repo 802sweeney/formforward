@@ -538,8 +538,19 @@ You manage the athlete's Performance Management Chart (PMC) and Acute Recovery B
    - RED HOLE ALERT (< -25 TSS): If the athlete is submerged in the Red Zone or has gone >4 days without a true rest day, you MUST NOT schedule high-intensity workouts. You must prescribe true rest (0-10 TSS) or light active recovery until the deficit clears back into the yellow/green.
 5. WORKOUT STRUCTURE:
    - Every workout notes/description must account for 100% of the duration: [warmup] | [main set] | [cooldown] | [context].
-6. FUNCTION CALLING:
-   - Whenever you recommend modifying, creating, or deleting planned workouts, you MUST call the `propose_plan_updates` tool with the exact structured updates.
+6. FORM FORWARD APP ARCHITECTURE & HOW WORKOUT PLANNING WORKS:
+   - You are the virtual coach embedded inside the "Form Forward" training web application.
+   - The athlete's training calendar has two views:
+     1. "Past" tab: Completed rides and runs synced from Strava.
+     2. "Upcoming" tab: Future planned workouts stored in the SQLite database `workouts` table. If there are no entries in the database for a date, the Upcoming tab is EMPTY ("Rest / Off").
+   - CRITICAL: Plain text in chat DOES NOT update the calendar or the Upcoming tab!
+     - Writing "your workouts are locked in below" or writing a text outline in chat DOES NOT create workouts in the database or on the calendar.
+     - The athlete CANNOT see your workouts on their Upcoming tab or sync them to Zwift/Garmin unless you call `propose_plan_updates`.
+   - MANDATORY TOOL INVOCATION:
+     - Whenever the athlete asks to "update my plan", "build a plan", "add workouts", "schedule", or whenever you agree on a training block:
+       You MUST call the `propose_plan_updates` tool.
+     - In `workout_updates`, populate every single day in the planned block with exact dates (`YYYY-MM-DD`), names, target TSS, duration, structured notes with warmup/main set/cooldown, and coaching reason.
+     - Never tell the athlete workouts are "locked in" without calling `propose_plan_updates`!
    - If the athlete shares a permanent rule, injury, or schedule constraint, include it in `new_memory_items`.
 """
 
@@ -643,22 +654,6 @@ CLAUDE_TOOLS = [
         "input_schema": {
             "type": "object",
             "properties": {
-                "coach_response": {
-                    "type": "string",
-                    "description": "Coaching rationale and conversational explanation for the athlete."
-                },
-                "new_memory_items": {
-                    "type": "array",
-                    "description": "New long-term coaching rules, injury notes, or athlete preferences to store in persistent memory.",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "category": {"type": "string", "enum": ["rule", "goal", "injury", "observation", "preference"]},
-                            "content": {"type": "string", "description": "The persistent rule or memory note."}
-                        },
-                        "required": ["category", "content"]
-                    }
-                },
                 "workout_updates": {
                     "type": "array",
                     "description": "List of planned workouts to modify, create, or delete.",
@@ -675,9 +670,25 @@ CLAUDE_TOOLS = [
                         },
                         "required": ["date", "action", "name", "tss", "duration_minutes", "notes"]
                     }
+                },
+                "coach_response": {
+                    "type": "string",
+                    "description": "Concise coaching rationale and conversational explanation for the athlete."
+                },
+                "new_memory_items": {
+                    "type": "array",
+                    "description": "New long-term coaching rules, injury notes, or athlete preferences to store in persistent memory.",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "category": {"type": "string", "enum": ["rule", "goal", "injury", "observation", "preference"]},
+                            "content": {"type": "string", "description": "The persistent rule or memory note."}
+                        },
+                        "required": ["category", "content"]
+                    }
                 }
             },
-            "required": ["coach_response", "workout_updates"]
+            "required": ["workout_updates", "coach_response"]
         }
     }
 ]
@@ -926,9 +937,17 @@ def query_claude(api_key, user_message, context, history_messages=None, model=No
 
     messages.append({"role": "user", "content": user_message})
 
+    def is_plan_update_intent(msg):
+        m = msg.lower()
+        actions = ['update', 'build', 'create', 'schedule', 'put together', 'make', 'add', 'adjust', 'change', 'set up', 'program', 'lock in', 'prescribe', 'fix', 'move', 'shift']
+        targets = ['plan', 'workout', 'calendar', 'schedule', 'block', 'month', 'week', 'quest', 'training', 'day', 'rest', 'session', 'ride', 'run']
+        return any(a in m for a in actions) and any(t in m for t in targets)
+
+    force_tool = is_plan_update_intent(user_message)
+
     payload = {
         "model": target_model,
-        "max_tokens": 4096,
+        "max_tokens": 8192,
         "system": [
             {
                 "type": "text",
@@ -937,6 +956,7 @@ def query_claude(api_key, user_message, context, history_messages=None, model=No
             }
         ],
         "tools": CLAUDE_TOOLS,
+        "tool_choice": {"type": "tool", "name": "propose_plan_updates"} if force_tool else {"type": "auto"},
         "messages": messages
     }
 
@@ -966,9 +986,15 @@ def query_claude(api_key, user_message, context, history_messages=None, model=No
             elif block.get('type') == 'tool_use' and block.get('name') == 'propose_plan_updates':
                 args = block.get('input', {})
                 if args.get('coach_response'):
-                    coach_text = args['coach_response']
+                    if coach_text.strip():
+                        coach_text = coach_text.strip() + "\n\n" + args['coach_response'].strip()
+                    else:
+                        coach_text = args['coach_response'].strip()
                 proposed_workouts = args.get('workout_updates', [])
                 new_memories = args.get('new_memory_items', [])
+
+        if not coach_text.strip():
+            coach_text = "I have proposed updates to your training plan below. Click 'Apply to Training Plan' to save them to your calendar."
 
         validated_workouts, val_errors = validate_proposals(proposed_workouts, context['today'])
         return {
